@@ -16,11 +16,9 @@ function _eventbrite_api_get_events() {
   // Build a new request object
   $request = _eventbrite_common_new_request('user_list_events');
 
-  // This function can now add any query string params to request
-
   // It's too bad that this returns XML data by default, I think it needs to be though
   if ($xml_data = _eventbrite_common_process_request($request)) {
-  	$events = array();
+    $events = array();
     foreach ($xml_data as $key => $xml_event) {
       if ($key == 'event' && $event = _eventbrite_api_populate_event($xml_event)) {
         $events[$event->id] = $event;
@@ -30,11 +28,30 @@ function _eventbrite_api_get_events() {
   }
 }
 
-function _eventbrite_api_populate_event($event_xml) {
+function _eventbrite_api_populate_event($event_data) {
   $event = new stdClass();
-  $event->id = (integer)$event_xml->id;
-  $event->title = (string)$event_xml->title;
-  $event->description = (string)$event_xml->description;
+  $event->id = (integer)$event_data->id;
+  $event->title = (string)$event_data->title;
+  $event->description = (string)$event_data->description;
 
   return $event;
+}
+
+function _eventbrite_api_save_event($event) {
+  $request = _eventbrite_common_new_request('event_new');
+
+  // Add event data to request
+  $request->params['title'] = $event->title;
+  $request->params['description'] = $event->description;
+  $request->params['start_date'] = $event->start_date;
+  $request->params['end_date'] = $event->end_date;
+  $request->params['timezone'] = $event->timezone;
+
+  // XML data will only come back if no error
+  if ($xml_data = _eventbrite_common_process_request($request)) {
+    $message = (string)$xml_data->message;
+    $event_id = (integer)$xml_data->id;
+    watchdog('eventbrite', "Message: %message\nEventbrite Event ID: %id", array('%message' => $message, '%id' => $id));
+    return $event_id;
+  }
 }

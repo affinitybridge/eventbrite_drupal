@@ -19,11 +19,19 @@ function eventbrite_menu() {
   return $items;
 }
 
-function eventbrite_get($obj_type, $id = NULL) {
+function eventbrite_get($op, $id = NULL) {
   module_load_include('inc', 'eventbrite', 'includes/eventbrite.api');
-  switch ($obj_type) {
+  switch ($op) {
     case 'user_list_events':
       return _eventbrite_api_get_events();
+  }
+}
+
+function eventbrite_save($op, $object) {
+  module_load_include('inc', 'eventbrite', 'includes/eventbrite.api');
+  switch ($op) {
+    case 'event_new':
+      return _eventbrite_api_save_event($object);
   }
 }
 

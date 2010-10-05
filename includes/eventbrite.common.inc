@@ -40,6 +40,15 @@ function _eventbrite_common_new_request($op) {
   $request->user_key = variable_get('eventbrite_user_key', '');
   $request->params = array();
 
+  switch ($op) {
+    case 'user_list_events':
+      $request->op_type = 'get';
+      break;
+    case 'event_new':
+      $request->op_type = 'save';
+      $request->max_cache = 0;
+      break;
+  }
   if ($request->user_key) {
     return $request;
   }
@@ -90,43 +99,52 @@ function _eventbrite_common_process_request($request) {
   }
 
   // TODO: expose a hook here to let other modules change the request
-
+  
+  // Set cache to 0 if op_type is save--submodules should not be changing this
+  if ($request->op_type == 'save') {
+    $request->max_cache = 0;
+  }
+  
   // TODO: build query string
   $param_list = $request->params;
   $request->params['user_key'] = $request->user_key;
   $request->params['app_key'] = $app_key;
   $param_list = array();
   foreach ($request->params as $key => $value) {
-    $param_list[] = $key .'='. $value;
+    $param_list[] = $key .'='. urlencode($value);
   }
   $request->query_string = join('&', $param_list);
 
   // TODO: check request against cache in the DB, return if a suitable row is found
-  if ($cached_result = _eventbrite_common_check_cache($request)) {
-  	// TODO: Check if cached result is recent enough to use
-  	// If so, return it
-  	$now = time();
-  	if (($cached_result->timestamp + $request->max_cache) > $now) {
-  	  // Cache is still valid
-  	  drupal_set_message('found a cached result, and it is still valid!');
-  	  return simplexml_load_string($cached_result->result);
-  	}
-  	else {
-  	  drupal_set_message('found a cached result, unfortunately it is not still valid!');
-   	}
-  }
-  
-  // Send HTTP request to the server - nothing in the cache, so there's no other choice now
-  if ($result = drupal_http_request(EVENTBRITE_SERVER . $request->op .'?'. $request->query_string)) {
-//  	$data = simplexml_load_string($result->data);
-//  	print_r($data);exit(4);
-    // Process the result if there was one, and return simplexml_load_string($result->data)
-    if ($server_result = _eventbrite_common_process_result($result)) {
-      if ($cached_result) {
-      	_eventbrite_common_cache_result($server_result, $request, 'update');
+  // only check if max_cache is non zero
+  if ($request->max_cache) {
+    if ($cached_result = _eventbrite_common_check_cache($request)) {
+      // TODO: Check if cached result is recent enough to use
+      // If so, return it
+      $now = time();
+      if (($cached_result->timestamp + $request->max_cache) > $now) {
+        // Cache is still valid
+        drupal_set_message('found a cached result, and it is still valid!');
+        return simplexml_load_string($cached_result->result);
       }
       else {
-      	_eventbrite_common_cache_result($server_result, $request, 'insert');
+        drupal_set_message('found a cached result, unfortunately it is not still valid!');
+      }
+    }
+  }
+  
+  // Send HTTP request to the server - nothing in the cache, so there's no other choice now  
+  if ($result = drupal_http_request(EVENTBRITE_SERVER . $request->op .'?'. $request->query_string) ) {
+    // Process the result if there was one, and return simplexml_load_string($result->data)
+    if ($server_result = _eventbrite_common_process_result($result)) {
+      // Only cache cachable queries
+      if ($request->max_cache) {
+        if ($cached_result) {
+          _eventbrite_common_cache_result($server_result, $request, 'update');
+        }
+        else {
+          _eventbrite_common_cache_result($server_result, $request, 'insert');
+        }
       }
       return simplexml_load_string($server_result);
     }
@@ -141,9 +159,9 @@ function _eventbrite_common_check_cache($request) {
     $request->query_string
   );
   if ($result) {
-  	if ($row = db_fetch_object($result)) {
-  	  return $row;
-  	}
+    if ($row = db_fetch_object($result)) {
+      return $row;
+    }
   }
 }
 
@@ -151,11 +169,11 @@ function _eventbrite_common_cache_result($result, $request, $db_op) {
   $request->result = $result;
   $request->timestamp = time();
   switch ($db_op) {
-  	case 'insert':
-  	  drupal_write_record('eventbrite_cache', $request);
-  	  break;
-  	case 'update':
-  	  drupal_write_record('eventbrite_cache', $request, array('op', 'query_string'));
-  	  break;
+    case 'insert':
+      drupal_write_record('eventbrite_cache', $request);
+      break;
+    case 'update':
+      drupal_write_record('eventbrite_cache', $request, array('op', 'query_string'));
+      break;
   }
 }
