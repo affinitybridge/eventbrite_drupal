@@ -1,0 +1,58 @@
+<?php
+// $Id
+
+/**
+ * @file
+ * Install hooks for Eventbrite.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function eventbrite_schema() {
+  $schema['eventbrite_cache'] = array(
+    'fields' => array(
+      'op' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'query_string' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+      ),
+      'timestamp' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'result' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('op', 'query_string'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function eventbrite_install() {
+  drupal_install_schema('eventbrite');
+}
+
+/**
+ * Remove variables on uninstall.
+ */
+function eventbrite_uninstall() {
+  drupal_uninstall_schema('eventbrite');
+
+  // No vars yet to be created by thei module
+  db_query("DELETE FROM {variable} WHERE name LIKE 'eventbrite_%'");
+  cache_clear_all('variables', 'cache');
+}
+

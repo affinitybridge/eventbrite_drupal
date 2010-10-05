@@ -1,0 +1,84 @@
+<?php
+
+function eventbrite_blocks_requirements($phase) {
+  $requirements = array();
+  
+  $eventbrite_valid_authentication = variable_get('eventbrite_valid_authentication', FALSE);
+
+  if (!$eventbrite_valid_authentication) {
+  	$requirements['eventbrite'] = array(
+  	  'title' => t('Eventbrite Authentication has not been configured'),
+  	  'severity' => REQUIREMENT_ERROR,
+  	  'description' => t('You must <a href="@configure">configure Eventbrite</a> with authentication keys and validate them against the Eventbrite server before enabling this module', array('@configure' => url('admin/settings/eventbrite'))),
+  	);
+  }
+
+  return $requirements;
+}
+
+function eventbrite_blocks_block($op = 'list', $delta = 0) {
+  $block = array();
+  switch ($op) {
+    case "list":
+      $events = eventbrite_get('user_list_events');
+      if (!$events) {
+        return;
+      }
+      foreach ($events as $key => $value) {
+        $block[$key . '_details']["info"]   = t("EventBrite Details: " . $value->title);
+        $block[$key . '_register']["info"]   = t("EventBrite Register Form: " . $value->title);
+        $block[$key . '_tickets']["info"]   = t("EventBrite Ticket Form: " . $value->title);
+        $block[$key . '_calendar']["info"]   = t("EventBrite Calendar Widget: " . $value->title);
+        $block[$key . '_countdown']["info"] = t("EventBrite Countdown Widget: " . $value->title);
+      }
+    break;
+    case "view";
+      $id = explode('_', $delta);
+      switch ($id[1]) {
+        case "details";
+          $events = eventbrite_get('user_list_events');
+          if ($events) {
+            $block['subject'] = $events[$id[0]]->title;
+            $content .= $events[$id[0]]->description;
+            $content .= '<a href="http://www.eventbrite.com/event/' . $id[0] . '?ref=elink" target="_blank">Attend This Event</a>';
+          }
+          break;
+        case "register";
+          $content .= _eventbrite_blocks_print_registration_form($id[0]);
+          break;
+        case "tickets";
+          $events = eventbrite_get('user_list_events');
+          if ($events) {
+            $block['subject'] = $events[$id[0]]->title;
+            $content .= $events[$id[0]]->description;
+            $content .= _eventbrite_blocks_print_ticket_form($id[0]);
+          }
+          break;
+        case "calendar";
+          $content .= _eventbrite_blocks_print_calendar_widget($id[0]);
+          break;
+        case "countdown";
+          $content .= _eventbrite_blocks_print_countdown_widget($id[0]);
+          break;
+      }
+      $block['content'] = $content;
+    break;
+  }
+  return $block;
+}
+
+function _eventbrite_blocks_print_registration_form($id) {
+  return '<div style="width:100%; text-align:left;" ><iframe  src="http://www.eventbrite.com/event/' . $id . '?ref=eweb" frameborder="0" height="550" width="100%" vspace="0" hspace="0" marginheight="5" marginwidth="5" scrolling="auto" allowtransparency="true"></iframe></div>';
+}
+
+function _eventbrite_blocks_print_ticket_form($id) {
+  return '<div style="width:100%; text-align:left;" ><iframe  src="http://www.eventbrite.com/tickets-external?eid=' . $id . '&ref=etckt" frameborder="0" height="192" width="100%" vspace="0" hspace="0" marginheight="5" marginwidth="5" scrolling="auto" allowtransparency="true"></iframe></div>';
+}
+
+function _eventbrite_blocks_print_calendar_widget($id) {
+  return '<div style="width:100%; text-align:center;" ><iframe  src="http://www.eventbrite.com/calendar-widget?eid=' . $id . '" frameborder="0" height="333" marginheight="0" marginwidth="0" scrolling="no" ></iframe></div>';
+}
+
+function _eventbrite_blocks_print_countdown_widget($id) {
+  return '<div style="width:100%; text-align:center;" ><iframe  src="http://www.eventbrite.com/countdown-widget?eid=' . $id . '" frameborder="0" height="259" marginheight="0" marginwidth="0" scrolling="no" ></iframe></div>';
+}

@@ -1,0 +1,29 @@
+<?php
+// $Id$
+
+/*
+ * Implementation of hook_menu().
+ */
+function eventbrite_menu() {
+
+  $items['admin/settings/eventbrite'] = array(
+    'title' => 'Eventbrite',
+    'description' => 'Configure Eventbrite API settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_admin_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'includes/eventbrite.admin.inc',
+  );
+
+  return $items;
+}
+
+function eventbrite_get($obj_type, $id = NULL) {
+  module_load_include('inc', 'eventbrite', 'includes/eventbrite.api');
+  switch ($obj_type) {
+    case 'user_list_events':
+      return _eventbrite_api_get_events();
+  }
+}
+

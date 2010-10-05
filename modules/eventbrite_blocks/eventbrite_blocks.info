@@ -1,0 +1,6 @@
+name = Eventbrite Blocks
+description = Integrates drupal with the Eventbrite service - matches the feature set of Eventbrite 6.x-1.x-dev but uses the 6.x-2.x-dev API
+version = "6.x-2.x-dev"
+core = 6.x
+package = Eventbrite
+dependencies[] = eventbrite
