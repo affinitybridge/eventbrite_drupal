@@ -1,3 +1,4 @@
+; $Id$
 name = Eventbrite CCK Field
 description = A CCK field allowing to attach EventBrite events to nodes.
 version = "6.x-2.x-dev"
