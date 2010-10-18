@@ -24,6 +24,11 @@ function eventbrite_get($op, $id = NULL) {
   switch ($op) {
     case 'user_list_events':
       return _eventbrite_api_get_events();
+    case 'event_get':
+      if ($id) {
+        return _eventbrite_api_get_event($id);
+      }
+      break;
   }
 }
 

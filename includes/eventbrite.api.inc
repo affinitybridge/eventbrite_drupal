@@ -8,9 +8,8 @@
 
   module_load_include('inc', 'eventbrite', 'includes/eventbrite.common');
 
-  /*
+/*
  * This function fetches the user's list of events from Eventbrite
- * This is the call from version 1.x of the module
  */
 function _eventbrite_api_get_events() {
   // Build a new request object
@@ -28,12 +27,29 @@ function _eventbrite_api_get_events() {
   }
 }
 
+/*
+ * This function fetches one events by Id
+ */
+function _eventbrite_api_get_event($event_id) {
+  // Build a new request object
+  $request = _eventbrite_common_new_request('event_get');
+
+  $request->params['id'] = $event_id;
+
+  if ($xml_data = _eventbrite_common_process_request($request)) {
+  	$event = _eventbrite_api_populate_event($xml_data);
+    return $event;
+  }
+}
+
 function _eventbrite_api_populate_event($event_data) {
   $event = new stdClass();
   $event->id = (integer)$event_data->id;
   $event->title = (string)$event_data->title;
   $event->description = (string)$event_data->description;
-
+  $event->start_date = strtotime((string)$event_data->start_date);
+  $event->end_date = strtotime((string)$event_data->end_date);
+  
   return $event;
 }
 

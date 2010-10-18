@@ -42,10 +42,12 @@ function _eventbrite_common_new_request($op) {
 
   switch ($op) {
     case 'user_list_events':
+    case 'event_get':
       $request->op_type = 'get';
       break;
     case 'event_new':
       $request->op_type = 'save';
+      // Set max_cache to 0 if this is a save operation (caching doesn't apply)
       $request->max_cache = 0;
       break;
   }
@@ -132,7 +134,6 @@ function _eventbrite_common_process_request($request) {
       }
     }
   }
-  
   // Send HTTP request to the server - nothing in the cache, so there's no other choice now  
   if ($result = drupal_http_request(EVENTBRITE_SERVER . $request->op .'?'. $request->query_string) ) {
     // Process the result if there was one, and return simplexml_load_string($result->data)
@@ -143,7 +144,7 @@ function _eventbrite_common_process_request($request) {
           _eventbrite_common_cache_result($server_result, $request, 'update');
         }
         else {
-          _eventbrite_common_cache_result($server_result, $request, 'insert');
+        	_eventbrite_common_cache_result($server_result, $request, 'insert');
         }
       }
       return simplexml_load_string($server_result);
@@ -158,6 +159,7 @@ function _eventbrite_common_check_cache($request) {
     $request->op,
     $request->query_string
   );
+
   if ($result) {
     if ($row = db_fetch_object($result)) {
       return $row;

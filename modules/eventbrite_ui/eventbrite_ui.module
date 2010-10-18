@@ -1,0 +1,54 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_menu().
+ */
+function eventbrite_ui_menu() {
+  $items['eventbrite_ui/events'] = array(
+    'title' => t('Eventbrite Events'),
+    'page callback' => 'eventbrite_ui_event_list',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'eventbrite_ui.pages.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['eventbrite_ui/new-event'] = array(
+    'title' => t('Create a new Event'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_ui_event_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'eventbrite_ui.pages.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['eventbrite_ui/event/%'] = array(
+    'title' => 'Single Eventbrite Event',
+    'page callback' => 'eventbrite_ui_event',
+    'page arguments' => array(2),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'eventbrite_ui.pages.inc',
+    'type' => MENU_CALLBACK,
+  );
+  
+  $items['eventbrite_ui/event/%/view'] = array(
+    'title' => 'View',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -1,
+  );
+  
+  $items['eventbrite_ui/event/%/edit'] = array(
+    'title' => 'Edit Event',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_ui_event_form', 2),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'eventbrite_ui.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+  );  
+  
+  return $items;
+}
