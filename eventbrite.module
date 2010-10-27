@@ -36,7 +36,9 @@ function eventbrite_save($op, $object) {
   module_load_include('inc', 'eventbrite', 'includes/eventbrite.api');
   switch ($op) {
     case 'event_new':
-      return _eventbrite_api_save_event($object);
+      return _eventbrite_api_event_new($object);
+    case 'event_update':
+      return _eventbrite_api_event_update($object);
   }
 }
 

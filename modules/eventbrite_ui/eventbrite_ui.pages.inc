@@ -2,46 +2,61 @@
 // $Id$
 
 function eventbrite_ui_event_form(&$form_state, $event_id = 0) {
-  /*
-  $form['id'] = array(
-    '#type' => 'textfield',
-    '#title' => 'ID',
-    '#default_value' => $event_id,
-  );
-  */
-
+  /* include form elements implemented by Date API */
+  module_load_include('inc', 'date_api', 'date_api_elements.inc');
+	
+  if ($event_id) {
+  	$event = eventbrite_get('event_get', $event_id);
+  	
+  	$form['event_id'] = array(
+  	  '#type' => 'value',
+  	  '#value' => $event->id,
+  	);
+  }
   $form['title'] = array(
     '#type' => 'textfield',
     '#title' => t('Title'),
+    '#default_value' => (isset($event->title)) ? $event->title : '',
   );
   
   $form['description'] = array(
     '#type' => 'textarea',
     '#title' => t('Description'),
+    '#default_value' => (isset($event->title)) ? $event->description : '',
   );
   
+  // TODO: Set a variable for admin to configure default time
+  //       For now just put it two weeks in advance
+  $default_time = time() + (60 * 60 * 24 * 14);
+  $default_format = 'Y-m-d ha';
+  
+  // TODO: allow admin to set format string
+  //       For now just use basic
+  $event_format = 'Y-m-d h:ia';
+
+  $display_format = 'F-d-Y h:iA';
+
   $form['start_date'] = array(
-    '#type' => 'date',
+    '#type' => 'date_select',
     '#title' => t('Start date'),
+    '#default_value' => (isset($event->start_date)) ? format_date($event->start_date, 'custom', $event_format) : format_date($default_time, 'custom', $default_format),
+    '#date_format' => $display_format,
+    '#date_increment' => 5,
+    '#date_label_position' => 'none',
+    '#date_year_range' => '0:+1',  
   );
-  
-  $form['start_time'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Start time'),
-    '#description' => t('Example: 19:30'),
-  );
-  
+  $default_time += (60 * 60 * 3);
+
   $form['end_date'] = array(
-    '#type' => 'date',
+    '#type' => 'date_select',
     '#title' => t('End date'),
+    '#default_value' => (isset($event->end_date)) ? format_date($event->end_date, 'custom', $event_format) : format_date($default_time, 'custom', $default_format),
+    '#date_format' => $display_format,
+    '#date_increment' => 5,
+    '#date_label_position' => 'none',
+    '#date_year_range' => '0:+1',  
   );
-  
-  $form['end_time'] = array(
-    '#type' => 'textfield',
-    '#title' => t('End time'),
-    '#description' => t('Example: 19:30'),
-  );
-  
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => 'Submit',
@@ -53,26 +68,37 @@ function eventbrite_ui_event_form(&$form_state, $event_id = 0) {
 function eventbrite_ui_event_form_submit($form, &$form_state) {
   $event = new stdClass();
   
+  if ($form_state['values']['event_id']) {
+  	$event->id = $form_state['values']['event_id'];
+  }
   $event->title = $form_state['values']['title'];
   $event->description = $form_state['values']['description'];
   
-  $start_date = $form_state['values']['start_date'];
-  $event->start_date = $start_date['year'] .'-'. $start_date['month'] .'-'. $start_date['day'];
-  $event->start_date .= ' '. $form_state['values']['start_time'] .':00';
-
-  $end_date = $form_state['values']['end_date'];
-  $event->end_date = $end_date['year'] .'-'. $end_date['month'] .'-'. $end_date['day'];
-  $event->end_date .= ' '. $form_state['values']['end_time'] .':00';
+  $event->start_date = $form_state['values']['start_date'];
+  $event->end_date = $form_state['values']['end_date'];
 
   $event->timezone = 'GMT+01';
 
-  if ($event_id = eventbrite_save('event_new', $event)) {
-    drupal_set_message(t('The new event was successfully created'));
-    
-    // TODO: Clear the events list cache so that the new event shows up
+  if (isset($event->id)) {
+  	// Event ID is present, this is an update
+  	// TODO: Testing on event_id being returned doesn't make much sense, write better validation
+    if ($event_id = eventbrite_save('event_update', $event)) {
+      drupal_set_message(t('This event was successfully updated'));
+      // TODO: Clear the events list cache so that the new event shows up
+    }
+    else {
+      drupal_set_message('Could not create the event', 'error');
+    }
   }
   else {
-  	drupal_set_message('Could not create the event', 'error');
+  	// Event ID is not present, this is an insert
+    if ($event_id = eventbrite_save('event_new', $event)) {
+      drupal_set_message(t('The new event was successfully created'));
+      // TODO: Clear the events list cache so that the new event shows up
+    }
+    else {
+      drupal_set_message('Could not update the event', 'error');
+    }
   }
 }
 
