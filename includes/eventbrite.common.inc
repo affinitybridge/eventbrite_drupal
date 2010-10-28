@@ -9,28 +9,6 @@
 define('EVENTBRITE_SERVER', 'https://www.eventbrite.com/xml/');
 
 /*
- * This is a utility function to manage any errors generated over the page request
- *
- * param 1: $error_msg: a error message string.  '' when this function is being called to get the errors
- * param 2: $error_type: An Eventbrite supplied value used to associate the error with a form element
- */
-function _eventbrite_common_errors($error_msg = '', $error_type = '') {
-  static $errors;
-  if (!isset($errors)) {
-    $errors = array();
-  }
-  if ($error_msg) {
-    if ($error_type) {
-      $errors[$error_type] = $error_msg;
-    }
-    else {
-      $errors[] = $error_msg;
-    }
-  }
-  return $errors;
-}
-
-/*
  * Build a request object
  */
 function _eventbrite_common_new_request($op) {
