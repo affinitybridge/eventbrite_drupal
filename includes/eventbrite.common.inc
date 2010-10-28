@@ -50,7 +50,7 @@ function _eventbrite_common_process_result($result) {
           $watchdog_message .= t('Request: !request', array('!request' => $request)) ."\n";
           watchdog('eventbrite', $watchdog_message);
 
-          _eventbrite_common_errors(t((string)$xml_data->error_message), (string)$xml_data->error_type);
+          eventbrite_errors(t((string)$xml_data->error_message), (string)$xml_data->error_type);
           return;
         }
 
@@ -64,7 +64,7 @@ function _eventbrite_common_process_result($result) {
         $watchdog_message .= t('Request: !request', array('!request' => $request)) ."\n";
         watchdog('eventbrite', $watchdog_message);
 
-        _eventbrite_common_errors(t('YOYO The Eventbrite server can not be reached at this time.  Please contact the system administrator'));
+        eventbrite_errors(t('The Eventbrite server can not be reached at this time.  Please contact the system administrator'));
 
         return;
     }

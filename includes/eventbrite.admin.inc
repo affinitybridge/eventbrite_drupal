@@ -57,7 +57,7 @@ function eventbrite_admin_settings_validate($form, &$form_state) {
   }
 
   // Keys did not validate
-  if ($errors = _eventbrite_common_errors()) {
+  if ($errors = eventbrite_errors()) {
     foreach ($errors as $error_type => $error_msg) {
       switch ($error_type) {
         case 'Application Key Error':
