@@ -144,13 +144,23 @@ function eventbrite_cck_field($op, &$node, $field, &$items, $teaser, $page) {
     case 'validate':
       if (is_array($items)) {
         foreach ($items as $delta => $item) {
-          if ($item['ebid'] != 0 && !is_numeric($item['ebid'])) {
+          // TODO: verify these validation steps are working properly
+          if (empty($item['ebid'])) {
+          	continue;
+          }
+          if (!is_numeric($item['ebid'])) {
             form_set_error($field['field_name'], t('"%ebid" is not a valid number', array('%ebid' => $item['ebid'])));
+            return false;
+          }
+          else {
+            // Check to see that this is a gettable event
+            if (!eventbrite_get('event_get', $item['ebid'])) {
+              form_set_error($field['field_name'], t('"%ebid" is not a valid event id in the Eventbrite system', array('%ebid' => $item['ebid'])));
+              return false;
+            }
           }
         }
       }
-      // TODO: Really better validation is needed here
-      //       Should check that an Eventbrite event exists with that ID      
       return $items;
 
     // This is where you make sure that user-provided 
@@ -220,14 +230,12 @@ function eventbrite_cck_elements() {
     'eventbrite_cck_event_id' => array(
       '#input' => TRUE,
       '#process' => array('eventbrite_cck_event_id_widget_process' ),
-  // TODO: Set up this validate function to check that the event is gettable
-//      '#element_validate' => array('eventbrite_cck_event_widget_validate'),
+      '#element_validate' => array('eventbrite_cck_event_widget_validate'),
     ),
     'eventbrite_cck_event_title' => array(
       '#input' => TRUE,
       '#process' => array('eventbrite_cck_event_title_widget_process'),
-  // TODO: Set up this validate function to check that the event is gettable
-    //      '#element_validate' => array('eventbrite_cck_event_widget_validate'),
+      '#element_validate' => array('eventbrite_cck_event_widget_validate'),
     ),
   );
 
@@ -273,19 +281,37 @@ function eventbrite_cck_event_title_widget_process($element, $edit, &$form_state
   return $element;
 }
 
-// TODO: This function needs to be set up properly
 function eventbrite_cck_event_widget_validate(&$element, &$form_state) {
-  if (empty($element['ebid']['#value'])) {
+  $event_id = $element['ebid']['#value'];
+  if (empty($event_id)) {
     return;
   }
 
   $field = content_fields($element['#field_name'], $element['#type_name']);
   $ftitle = $field['widget']['label'];
 
-  // TODO: If this eventbrite ID does not refer to an actual event
-  if (0 /* try to get this event specifically and see if we can */) {
-    form_error($element, t('The event you entered %field field does not exist.', array('%field' => $ftitle )));
+  if (!is_numeric($event_id)) {
+  	form_set_error(
+      $element, 
+      t(
+        'The Eventbrite event id you entered (%ebid) for %field field is not numeric',
+        array('%ebid' => $event_id, '%field' => $ftitle)
+      )
+    );
   }
+  
+  // Check to see that this is a gettable event
+  if (!eventbrite_get('event_get', $event_id)) {
+  	form_set_error(
+      $element, 
+      t(
+        'The Eventbrite event id you entered (%ebid) for %field field is not a valid event id in the Eventbrite system',
+        array('%ebid' => $event_id, '%field' => $ftitle)
+      )
+    );
+    return false;
+  }
+  
 }
 
 /**
