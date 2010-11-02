@@ -29,6 +29,20 @@ function template_preprocess_eventbrite_cck_event(&$vars) {
   
 }
 
+/**
+ * Theme function for 'Event ID' field widget.
+ */
+function theme_eventbrite_cck_event_id(&$element) {
+  return theme('form_element', $element, $element['#children']);
+}
+
+/**
+ * Theme function for 'Event Title' field widget.
+ */
+function theme_eventbrite_cck_event_title($element) {
+  return theme('form_element', $element, $element['#children']);
+}
+
 
 
 ?>

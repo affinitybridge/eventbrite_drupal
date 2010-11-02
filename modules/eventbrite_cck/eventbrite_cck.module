@@ -1,30 +1,51 @@
 <?php
 // $Id$
 
-/**
- * @file
- * An example to define a simple field, widget, and formatter.
- * A module could define only a field, only a widget, only a 
- * formatter, or any combination. Widgets and formatters must
- * declare what kind of field they work with, which can be any
- * existing field as well as any new field the module creates.
- *
- * Created using the article: http://www.lullabot.com/articles/creating-custom-cck-fields
- */
+//==========================================//
+// CORE HOOKS
+//==========================================//
 
 /**
  * Implementation of hook_init().
+ * 
+ * This hook will bring in the eventbrite_cck stylesheet
  */
 function eventbrite_cck_init() {
   drupal_add_css(drupal_get_path('module', 'eventbrite_cck')  .'/eventbrite_cck.css');
 }
 
+/**
+ * Implementation of hook_theme().
+ */
+function eventbrite_cck_theme() {
+  $path = drupal_get_path('module', 'eventbrite_cck');
+  
+  $base = array(
+    'file' => 'theme.inc',
+    'path' => "$path/theme",
+  );
+  
+  return array(
+    'eventbrite_cck_formatter_default' => $base + array(
+      'arguments' => array('element' => NULL)
+    ),
+    'eventbrite_cck_event' => $base + array(
+      'arguments' => array('event' => NULL),
+      'template' => 'eventbrite-cck-event'
+    ),
+    'eventbrite_cck_event_id' => $base + array(
+      'arguments' => array('element' => NULL),
+    ),
+    'eventbrite_cck_event_title' => $base + array(
+      'arguments' => array('element' => NULL),
+    ),
+  );
+}
 
 
 //==========================================//
 // CCK FIELD HOOKS
 //==========================================//
-
 /**
  * Implementation of hook_field_info().
  */
@@ -159,51 +180,151 @@ function eventbrite_cck_content_is_empty($item, $field) {
 }
 
 //==========================================//
-// DEFINING A FORMATTER
+// CCK FIELD WIDGET HOOKS
 //==========================================//
 
 /**
- * Implementation of hook_theme().
+ * Implementation of hook_widget_info().
  */
- 
-function eventbrite_cck_theme() {
-  $path = drupal_get_path('module', 'eventbrite_cck');
-  
-  $base = array(
-    'file' => 'theme.inc',
-    'path' => "$path/theme",
-  );
-  
+function eventbrite_cck_widget_info() {
   return array(
-    'eventbrite_cck_formatter_default' => $base + array('arguments' => array('element' => NULL)),
-    'eventbrite_cck_event' => $base + array('arguments' => array('event' => NULL), 'template' => 'eventbrite-cck-event'),
+    // Event ID widget allows user to enter an Eventbrite event id into a textfield
+    'eventbrite_cck_event_id' => array(
+      'label' => t('Eventbrite ID Text field'),
+      'field types' => array('eventbrite_cck'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'callbacks' => array(
+        'default value' => CONTENT_CALLBACK_DEFAULT,
+      ),
+      'description' => 'An Edit widget that takes the Eventbrite event id in a textfield',
+    ),
+    // Event Title widget allows user to eelect an Eventbrite event by title
+    //   from a list of those events created with the Application Key user
+    'eventbrite_cck_event_title' => array(
+      'label' => t('Eventbrite Title Select box'),
+      'field types' => array('eventbrite_cck'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'callbacks' => array(
+        'default value' => CONTENT_CALLBACK_DEFAULT,
+      ),
+      'description' => 'An Edit widget that takes the Eventbrite Event title in a select box',
+    ),
   );
 }
+
+/**
+ * Implementation of hook_elements().
+ */
+function eventbrite_cck_elements() {
+  $elements = array(
+    'eventbrite_cck_event_id' => array(
+      '#input' => TRUE,
+      '#process' => array('eventbrite_cck_event_id_widget_process' ),
+  // TODO: Set up this validate function to check that the event is gettable
+//      '#element_validate' => array('eventbrite_cck_event_widget_validate'),
+    ),
+    'eventbrite_cck_event_title' => array(
+      '#input' => TRUE,
+      '#process' => array('eventbrite_cck_event_title_widget_process'),
+  // TODO: Set up this validate function to check that the event is gettable
+    //      '#element_validate' => array('eventbrite_cck_event_widget_validate'),
+    ),
+  );
+
+  return $elements;
+}
+
+function eventbrite_cck_event_id_widget_process($element, $edit, &$form_state, $form) {
+  $defaults = $element['#value'];
+  $field = content_fields($element['#field_name'], $element['#type_name']);
+
+  $element['ebid'] = array(
+    '#title' => t( 'Eventbrite ID' ),
+    '#type' => 'textfield',
+    '#default_value' => $defaults['ebid'],
+    '#size' => 16,
+    '#maxlength' => 11,
+    '#weight' => 0,
+  );
+
+  return $element;
+}
+
+function eventbrite_cck_event_title_widget_process($element, $edit, &$form_state, $form) {
+  $defaults = $element['#value'][$element['#delta']];
+  $field = content_fields($element['#field_name'], $element['#type_name']);
+
+  // TODO: Turn this function into an Evenbrite module API method that returns an event list id => title
+  $events = eventbrite_get('user_list_events');
+  $options = array();
+  $options[0] = '';
+  foreach ($events as $event_id => $event) {
+  	$options[$event_id] = $event->title;
+  }
+
+  $element['ebid'] = array(
+    '#title' => t( 'Eventbrite Event' ),
+    '#type' => 'select',
+    '#options' => $options,
+    '#default_value' => $defaults['ebid'],
+    '#weight' => 0,
+  );
+
+  return $element;
+}
+
+// TODO: This function needs to be set up properly
+function eventbrite_cck_event_widget_validate(&$element, &$form_state) {
+  if (empty($element['ebid']['#value'])) {
+    return;
+  }
+
+  $field = content_fields($element['#field_name'], $element['#type_name']);
+  $ftitle = $field['widget']['label'];
+
+  // TODO: If this eventbrite ID does not refer to an actual event
+  if (0 /* try to get this event specifically and see if we can */) {
+    form_error($element, t('The event you entered %field field does not exist.', array('%field' => $ftitle )));
+  }
+}
+
+/**
+ * Implementation of hook_widget().
+ */
+function eventbrite_cck_widget(&$form, &$form_state, $field, $items, $delta = 0) {
+  // Define both Event ID and Event Title widgets
+  switch( $field['widget']['type'] ) {
+	case 'eventbrite_cck_event_id':
+	  $element = array(
+        '#type' => 'eventbrite_cck_event_id',
+        '#default_value' => isset($items[$delta]) ? $items[$delta] : '',
+      );
+      break;
+
+    case 'eventbrite_cck_event_title':
+      $element = array(
+        '#type' => 'eventbrite_cck_event_title',
+        '#default_value' => $items,
+      );
+  	  break;
+  }
+    
+  return $element;
+}
+
+
+//==========================================//
+// CCK FIELD FORMATTER HOOKS
+//==========================================//
 /**
  * Implementation of hook_field_formatter_info().
- * 
- * All fields should have a 'default' formatter.
- * Any number of other formatters can be defined as well.
- * It's nice for there always to be a 'plain' option
- * for the raw value, but that is not required.
- * 
  */
 function eventbrite_cck_field_formatter_info() {
   return array(
-    // The machine name of the formatter.
+    // Default formatter (title, date, description)
     'default' => array(
-      // The human-readable label shown on the Display 
-      // fields screen.
       'label' => t('Title, date, and description'),
-      // An array of the field types this formatter 
-      // can be used on.
       'field types' => array('eventbrite_cck'),
-      // CONTENT_HANDLE_CORE:   CCK will pass the formatter
-      // a single value.
-      // CONTENT_HANDLE_MODULE: CCK will pass the formatter
-      // an array of all the values. None of CCK's core 
-      // formatters use multiple values, that is an option
-      // available to other modules that want it.
       'multiple values' => CONTENT_HANDLE_CORE,
     ),
   );
