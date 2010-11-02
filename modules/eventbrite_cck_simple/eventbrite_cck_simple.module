@@ -61,6 +61,10 @@ function eventbrite_cck_simple_widget_info() {
       // 'CONTENT_HANDLE_MODULE' means the module does it.
       // See optionwidgets for an example of a module that 
       // handles its own multiple values.
+      
+    // Copied from nodereference_select, we need a custom callback here sinece we need to build the option widg
+    //  'multiple values' => CONTENT_HANDLE_MODULE,
+    
       'multiple values' => CONTENT_HANDLE_CORE,
       'callbacks' => array(
         // Who will create the default value, default is core.
@@ -112,15 +116,21 @@ drupal_set_message('should be in here');
 }
 
 function eventbrite_cck_simple_title_widget_process($element, $edit, &$form_state, $form) {
-
-  $defaults = $element['#value'];
+  $defaults = $element['#value'][$element['#delta']];
   $field = content_fields($element['#field_name'], $element['#type_name']);
 
-  // TODO: Get select list of event titles for this widget
+  // TODO: Turn this function into an Evenbrite module API method that returns an event list id => title
+  $events = eventbrite_get('user_list_events');
+  $options = array();
+  $options[0] = '';
+  foreach ($events as $event_id => $event) {
+  	$options[$event_id] = $event->title;
+  }
+
   $element['ebid'] = array(
     '#title' => t( 'Eventbrite Event' ),
     '#type' => 'select',
-    '#options' => array(),
+    '#options' => $options,
     '#default_value' => $defaults['ebid'],
     '#weight' => 0,
   );
@@ -129,7 +139,6 @@ function eventbrite_cck_simple_title_widget_process($element, $edit, &$form_stat
 }
 
 function eventbrite_cck_simple_widget_validate(&$element, &$form_state) {
-
   if (empty($element['ebid']['#value'])) {
     return;
   }
@@ -143,48 +152,6 @@ function eventbrite_cck_simple_widget_validate(&$element, &$form_state) {
   }
 }
 
-function theme_eventbrite_cck_simple_id(&$element) {
-  return theme('form_element', $element, $element['#children']);
-}
-
-function theme_eventbrite_cck_simple_title($element) {
-  return $element['#children'];
-}
-
-/**
- * Implementation of hook_widget_settings().
- */
-/*
-function eventbrite_cck_simple_widget_settings($op, $widget) {
-  switch ($op) {
-    // Create the form element to be used on the widget 
-    // settings form. Widget settings can be different 
-    // for each shared instance of the same field and 
-    // should define the way the value is displayed to 
-    // the user in the edit form for that content type.
-    
-    case 'form':
-      $form = array();
-      $size = (isset($widget['size']) && is_numeric($widget['size'])) ? $widget['size'] : 60;
-      $form['size'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Size of textfield'),
-        '#default_value' => $size,
-        '#element_validate' => array('_element_validate_integer_positive'),
-        '#required' => TRUE,
-      );
-      return $form;
-    
-    // Return an array of the names of the widget settings 
-    // defined by this module. These are the items that 
-    // CCK will store in the widget definition and they 
-    // will be available in the $field['widget'] array.
-    // This should match the items defined in 'form' above.
-    case 'save':
-      return array('size');
-  }
-}
-*/
 /**
  * Implementation of hook_widget().
  *
@@ -221,50 +188,23 @@ function eventbrite_cck_simple_widget_settings($op, $widget) {
  *   the form item for a single element for this field
  */
 function eventbrite_cck_simple_widget(&$form, &$form_state, $field, $items, $delta = 0) {
-/* Not sure that switching between the widgets is needed here
+/* Switching between the widgets is needed here */
   switch( $field['widget']['type'] ) {
 	case 'eventbrite_cck_simple_id':
 	  $element = array(
-        '#type' => $field['widget']['type'],
+        '#type' => 'eventbrite_cck_simple_id',
         '#default_value' => isset($items[$delta]) ? $items[$delta] : '',
       );
       break;
 
     case 'eventbrite_cck_simple_title':
       $element = array(
-        '#type' => $field['widget']['type'],
-        '#default_value' => isset($items[$delta]) ? $items[$delta] : '',
+        '#type' => 'eventbrite_cck_simple_title',
+        '#default_value' => $items,
       );
   	  break;
   }
-  */
-  $element = array(
-    '#type' => $field['widget']['type'],
-    '#default_value' => isset($items[$delta]) ? $items[$delta] : '',
-  );
-  
-  
-  /* Don't think any of this is needed
-	$element['value'] = array(
-    '#type' => 'textfield',
-    '#default_value' => isset($items[$delta]['value']) ? $items[$delta]['value'] : NULL,
-    '#autocomplete_path' => $element['#autocomplete_path'],
-    //'#size' => !empty($field['widget']['size']) ? $field['widget']['size'] : 60,
-    '#attributes' => array('class' => 'eventbrite_cck'),
-    //'#maxlength' => !empty($field['max_length']) ? $field['max_length'] : NULL,
-  );
-  
-  // Used so that hook_field('validate') knows where to 
-  // flag an error in deeply nested forms.
-  if (empty($form['#parents'])) {
-    $form['#parents'] = array();
-  }
-  $element['_error_element'] = array(
-    '#type' => 'value',
-    '#value' => implode('][', array_merge($form['#parents'], array('value'))),
-  );
-  */
-  
+    
   return $element;
 }
 
@@ -278,12 +218,22 @@ function eventbrite_cck_simple_widget(&$form, &$form_state, $field, $items, $del
  */
  
 function eventbrite_cck_simple_theme() {
+  $path = drupal_get_path('module', 'eventbrite_cck_simple');
+  
+  $base = array(
+    'file' => 'theme.inc',
+    'path' => "$path/theme",
+  );
+  
   return array(
     // Themes for the formatters.
-    'eventbrite_cck_simple_formatter_plain' => array(
+    'eventbrite_cck_simple_formatter_plain' => $base + array(
       'arguments' => array('element' => NULL),
     ),
-    'eventbrite_cck_simple_id' => array(
+    'eventbrite_cck_simple_id' => $base + array(
+      'arguments' => array('element' => NULL),
+    ),
+    'eventbrite_cck_simple_title' => $base + array(
       'arguments' => array('element' => NULL),
     ),
   );
@@ -328,31 +278,3 @@ function eventbrite_cck_simple_field_formatter_info() {
   );
 }
 
-/**
- * Theme function for 'default' example field formatter.
- * 
- * $element['#item']: the sanitized $delta value for the item,
- * $element['#field_name']: the field name,
- * $element['#type_name']: the $node->type,
- * $element['#formatter']: the $formatter_name,
- * $element'#node']: the $node,
- * $element['#delta']: the delta of this item, like '0',
- * 
- */
-/* Remove this, it is in the parent module
-function theme_eventbrite_cck_simple_formatter_default($element) {
-//	drupal_set_message('YAR!');
-//	print_r($element['#item']);exit(4);
-  print ($element['#item']['safe']);
-  return $element['#item']['safe'];
-}
-*/
-
-/**
- * Theme function for 'plain' example field formatter.
- */
-/*
-function theme_eventbrite_cck_simple_formatter_plain($element) {
-  return strip_tags($element['#item']['safe']);
-}
-*/
