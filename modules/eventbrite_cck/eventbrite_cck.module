@@ -64,7 +64,7 @@ function eventbrite_cck_field_info() {
  */
 function eventbrite_cck_field_settings($op, $field) {
   switch ($op) {
-  	/* 'form' and 'save' ops may not be needed for this field */
+    /* 'form' and 'save' ops may not be needed for this field */
     // Create the form element to be used on the field 
     // settings form. Field settings will be the same for 
     // all shared instances of the same field and should 
@@ -145,7 +145,7 @@ function eventbrite_cck_field($op, &$node, $field, &$items, $teaser, $page) {
       if (is_array($items)) {
         foreach ($items as $delta => $item) {
           if ($item['ebid'] != 0 && !is_numeric($item['ebid'])) {
-            form_set_error($field['field_name'],t('"%ebid" is not a valid number',array('%ebid' => $item['ebid'])));
+            form_set_error($field['field_name'], t('"%ebid" is not a valid number', array('%ebid' => $item['ebid'])));
           }
         }
       }
@@ -259,7 +259,7 @@ function eventbrite_cck_event_title_widget_process($element, $edit, &$form_state
   $options = array();
   $options[0] = '';
   foreach ($events as $event_id => $event) {
-  	$options[$event_id] = $event->title;
+    $options[$event_id] = $event->title;
   }
 
   $element['ebid'] = array(
@@ -293,9 +293,9 @@ function eventbrite_cck_event_widget_validate(&$element, &$form_state) {
  */
 function eventbrite_cck_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   // Define both Event ID and Event Title widgets
-  switch( $field['widget']['type'] ) {
-	case 'eventbrite_cck_event_id':
-	  $element = array(
+  switch ($field['widget']['type']) {
+    case 'eventbrite_cck_event_id':
+      $element = array(
         '#type' => 'eventbrite_cck_event_id',
         '#default_value' => isset($items[$delta]) ? $items[$delta] : '',
       );
@@ -306,7 +306,7 @@ function eventbrite_cck_widget(&$form, &$form_state, $field, $items, $delta = 0)
         '#type' => 'eventbrite_cck_event_title',
         '#default_value' => $items,
       );
-  	  break;
+      break;
   }
     
   return $element;
