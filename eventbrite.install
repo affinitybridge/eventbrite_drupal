@@ -19,7 +19,7 @@ function eventbrite_schema() {
       ),
       'query_string' => array(
         'type' => 'varchar',
-        'length' => 64,
+        'length' => 128,
         'not null' => TRUE,
       ),
       'timestamp' => array(
