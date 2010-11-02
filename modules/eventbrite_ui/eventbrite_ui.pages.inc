@@ -57,6 +57,39 @@ function eventbrite_ui_event_form(&$form_state, $event_id = 0) {
     '#date_year_range' => '0:+1',  
   );
 
+  // TODO: Use site default timezone or user timezone, We need a proper timezone strategy
+  if (isset($event->timezone)) {
+  	$default_timezone = $event->timezone;
+  }
+  else {
+    $default_timezone = variable_get('date_default_timezone', 0) / 3600;
+  	// TODO: This is a terrible way to calculate timezone
+  	if ($default_timezone > 0) {
+  	  if ($default_timezone < 10) {
+        $default_timezone = 'GMT+0'.$default_timezone;
+   	  }
+  	  else {
+        $default_timezone = 'GMT+'.$default_timezone;
+      }
+  	}
+  	elseif ($default_timezone < 0) {
+  	  if ($default_timezone > -10) {
+        $default_timezone = 'GMT-0'.$default_timezone;
+   	  }
+  	  else {
+        $default_timezone = 'GMT-'.$default_timezone;
+      }
+  	}
+  	else {
+  	  $default_timezone = 'GMT';
+  	}
+  }
+$default_timezone = 'GMT-7';
+  $form['timezone'] = array(
+    '#type' => 'value',
+    '#value' => $default_timezone,
+  );
+  
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => 'Submit',
@@ -69,7 +102,8 @@ function eventbrite_ui_event_form_submit($form, &$form_state) {
   $event = new stdClass();
   
   if ($form_state['values']['event_id']) {
-  	$event->id = $form_state['values']['event_id'];
+  	$event->event_id = $form_state['values']['event_id'];
+  	drupal_set_message('you said it - '.$event->event_id);
   }
   $event->title = $form_state['values']['title'];
   $event->description = $form_state['values']['description'];
@@ -77,9 +111,9 @@ function eventbrite_ui_event_form_submit($form, &$form_state) {
   $event->start_date = $form_state['values']['start_date'];
   $event->end_date = $form_state['values']['end_date'];
 
-  $event->timezone = 'GMT+01';
-
-  if (isset($event->id)) {
+  $event->timezone = $form_state['values']['timezone'];
+  
+  if (isset($event->event_id)) {
   	// Event ID is present, this is an update
   	// TODO: Testing on event_id being returned doesn't make much sense, write better validation
     if ($event_id = eventbrite_save('event_update', $event)) {
@@ -87,7 +121,13 @@ function eventbrite_ui_event_form_submit($form, &$form_state) {
       // TODO: Clear the events list cache so that the new event shows up
     }
     else {
-      drupal_set_message('Could not create the event', 'error');
+      // Keys did not validate
+      if ($errors = eventbrite_errors()) {
+        foreach ($errors as $error_type => $error_msg) {
+          drupal_set_message($error_type .': '. $error_msg, 'error');
+        }
+      }
+      drupal_set_message('Could not update the event', 'error');
     }
   }
   else {
@@ -106,7 +146,8 @@ function eventbrite_ui_event_form_submit($form, &$form_state) {
 function eventbrite_ui_event_list() {
   // Pull all events from Eventbrite
   if ($events = eventbrite_get('user_list_events')) {
-    $header = array('Title', 'Description', 'Start Date', 'End Date');
+  	// TODO: check user access permissions before showing edit link (it will not work without perms, but dead link shouldn't show
+    $header = array('Title', 'Description', 'Start Date', 'End Date', 'Edit Link');
     $rows = array();
     foreach ($events as $event) {
       $rows[] = array(
@@ -114,6 +155,7 @@ function eventbrite_ui_event_list() {
         $event->description, 
         format_date($event->start_date, 'medium'), 
         format_date($event->end_date, 'medium'),
+        l('edit', 'eventbrite_ui/event/'. $event->id .'/edit'),
       );
     }
     $output .= theme('table', $header, $rows);

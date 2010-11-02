@@ -49,7 +49,7 @@ function _eventbrite_api_populate_event($event_data) {
   $event->description = (string)$event_data->description;
   $event->start_date = strtotime((string)$event_data->start_date);
   $event->end_date = strtotime((string)$event_data->end_date);
-  
+  $event->timezone = (string)$event_data->timezone;  
   return $event;
 }
 
@@ -73,10 +73,10 @@ function _eventbrite_api_event_new($event) {
 }
 
 function _eventbrite_api_event_update($event) {
-  $request = _eventbrite_common_new_request('event_new');
+  $request = _eventbrite_common_new_request('event_update');
 
   // Add event data to request
-  $request->params['id'] = $event->id;
+  $request->params['event_id'] = $event->event_id;
   $request->params['title'] = $event->title;
   $request->params['description'] = $event->description;
   $request->params['start_date'] = $event->start_date;

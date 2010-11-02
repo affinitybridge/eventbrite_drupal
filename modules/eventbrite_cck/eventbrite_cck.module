@@ -12,8 +12,17 @@
  * Created using the article: http://www.lullabot.com/articles/creating-custom-cck-fields
  */
 
+/**
+ * Implementation of hook_init().
+ */
+function eventbrite_cck_init() {
+  drupal_add_css(drupal_get_path('module', 'eventbrite_cck')  .'/eventbrite_cck.css');
+}
+
+
+
 //==========================================//
-// DEFINING A FIELD
+// CCK FIELD HOOKS
 //==========================================//
 
 /**
@@ -21,16 +30,10 @@
  */
 function eventbrite_cck_field_info() {
   return array(
-    // The machine name of the field, 
-    // no more than 32 characters.
+    // Defining Eventbrite Event field
     'eventbrite_cck' => array(
-      // The human-readable label of the field that will be 
-      // seen in the Manage fields screen.
-      'label' => t('Eventbrite Field'),
-      // A description of what type of data the field stores.
+      'label' => t('Eventbrite Event'),
       'description' => t('Associate an eventbrite event with a node.'),
-      // An icon to use in Panels.
-      // 'content_icon' => 'icon_content_text.png',
     ),
   );
 }
@@ -40,6 +43,7 @@ function eventbrite_cck_field_info() {
  */
 function eventbrite_cck_field_settings($op, $field) {
   switch ($op) {
+  	/* 'form' and 'save' ops may not be needed for this field */
     // Create the form element to be used on the field 
     // settings form. Field settings will be the same for 
     // all shared instances of the same field and should 
@@ -77,10 +81,11 @@ function eventbrite_cck_field_settings($op, $field) {
     //  'views', to define a Views field 
     //  'sortable', to add a Views sort field
     case 'database columns':
-      $columns['value'] = array(
-        'type' => 'varchar', 
-        'length' => 255, 
-        'not null' => FALSE, 
+      $columns['ebid'] = array(
+        'type' => 'int', 
+        'unsigned' => TRUE,
+        'not null' => TRUE, 
+        'default' => 0,
         'sortable' => TRUE, 
         'views' => TRUE,
       );
@@ -98,25 +103,14 @@ function eventbrite_cck_field_settings($op, $field) {
       $data = content_views_field_views_data($field);
       $db_info = content_database_info($field);
       $table_alias = content_views_tablename($field);
-      $field_data = $data[$table_alias][$field['field_name'] .'_value'];
+      $field_data = $data[$table_alias][$field['field_name'] .'_ebid'];
+
       // Make changes to $data as needed here.
+
       return $data;
   }
 }
 
-/**
- * Custom validation of settings values.
- * 
- * Create callbacks like this to do settings validation.
- */
- /*
-function _eventbrite_cck_length_validate($element, &$form_state) {
-  $value = $form_state['values']['max_length'];
-  if ($value && !is_numeric($value)|| $value < 1 || $value > 255) {
-    form_set_error('max_length', t('"Max length" must be a number between 1 and 255.'));
-  }
-}
-*/
 /**
  * Implementation of hook_field().
  */
@@ -129,27 +123,20 @@ function eventbrite_cck_field($op, &$node, $field, &$items, $teaser, $page) {
     case 'validate':
       if (is_array($items)) {
         foreach ($items as $delta => $item) {
-          // The error_element is needed so that CCK can 
-          // set an error on the right sub-element when 
-          // fields are deeply nested in the form.
-          $error_element = isset($item['_error_element']) ? $item['_error_element'] : '';
-          if (is_array($item) && isset($item['_error_element'])) unset($item['_error_element']);
-          /*
-          if (!empty($item['value'])) {
-            if (!empty($field['max_length']) && drupal_strlen($item['value']) > $field['max_length']) {
-              form_set_error($error_element, t('%name: the value may not be longer than %max characters.', array('%name' => $field['widget']['label'], '%max' => $field['max_length'])));
-            }
+          if ($item['ebid'] != 0 && !is_numeric($item['ebid'])) {
+            form_set_error($field['field_name'],t('"%ebid" is not a valid number',array('%ebid' => $item['ebid'])));
           }
-          */
         }
       }
+      // TODO: Really better validation is needed here
+      //       Should check that an Eventbrite event exists with that ID      
       return $items;
 
     // This is where you make sure that user-provided 
     // data is sanitized before being displayed.
     case 'sanitize':
       foreach ($items as $delta => $item) {
-        $example = check_plain($item['value']);
+        $example = check_plain($item['ebid']);
         $items[$delta]['safe'] = $example;
       }
   }
@@ -165,58 +152,12 @@ function eventbrite_cck_field($op, &$node, $field, &$items, $teaser, $page) {
  * from forms.
  */
 function eventbrite_cck_content_is_empty($item, $field) {
-  if (empty($item['value'])) {
+  if (empty($item['ebid'])) {
     return TRUE;
   }
   return FALSE;
 }
 
-/**
- * Implementation of hook content_generate().
- * 
- * Optional, provide dummy value for nodes created
- * by the Devel Generate module.
- */
- /*
-function eventbrite_cck_content_generate($node, $field) {
-  $node_field = array();
-  // Generate a value that respects max_length.
-  if (empty($field['max_length'])) {
-    $field['max_length'] = 12;
-  }
-  $node_field['value'] = user_password($field['max_length']);
-  return $node_field;
-}
-*/
-/**
- * Implementation of hook_token_list() 
- * and hook_token_values().
- * 
- * Optional, provide token values for this field.
- */
- /*
-function eventbrite_cck_token_list($type = 'all') {
-  if ($type == 'field' || $type == 'all') {
-    $tokens = array();
-
-    $tokens['example']['raw']       = t('Raw, unfiltered text');
-    $tokens['example']['formatted'] = t('Formatted and filtered text');
-
-    return $tokens;
-  }
-}
-*/
-/*
-function eventbrite_cck_token_values($type, $object = NULL) {
-  if ($type == 'field') {
-    $item = $object[0];
-
-    $tokens['raw']  = $item['value'];
-    $tokens['formatted'] = isset($item['view']) ? $item['view'] : '';
-    return $tokens;
-  }
-}
-*/
 //==========================================//
 // DEFINING A FORMATTER
 //==========================================//
@@ -226,14 +167,16 @@ function eventbrite_cck_token_values($type, $object = NULL) {
  */
  
 function eventbrite_cck_theme() {
+  $path = drupal_get_path('module', 'eventbrite_cck');
+  
+  $base = array(
+    'file' => 'theme.inc',
+    'path' => "$path/theme",
+  );
+  
   return array(
-    // Themes for the formatters.
-    'eventbrite_cck_formatter_default' => array(
-      'arguments' => array('element' => NULL),
-    ),
-    'eventbrite_cck_formatter_plain' => array(
-      'arguments' => array('element' => NULL),
-    ),
+    'eventbrite_cck_formatter_default' => $base + array('arguments' => array('element' => NULL)),
+    'eventbrite_cck_event' => $base + array('arguments' => array('event' => NULL), 'template' => 'eventbrite-cck-event'),
   );
 }
 /**
@@ -251,7 +194,7 @@ function eventbrite_cck_field_formatter_info() {
     'default' => array(
       // The human-readable label shown on the Display 
       // fields screen.
-      'label' => t('Default'),
+      'label' => t('Title, date, and description'),
       // An array of the field types this formatter 
       // can be used on.
       'field types' => array('eventbrite_cck'),
@@ -263,167 +206,6 @@ function eventbrite_cck_field_formatter_info() {
       // available to other modules that want it.
       'multiple values' => CONTENT_HANDLE_CORE,
     ),
-    'plain' => array(
-      'label' => t('Plain text'),
-      'field types' => array('eventbrite_cck'),
-      'multiple values' => CONTENT_HANDLE_CORE,
-    ),
   );
 }
 
-/**
- * Theme function for 'default' example field formatter.
- * 
- * $element['#item']: the sanitized $delta value for the item,
- * $element['#field_name']: the field name,
- * $element['#type_name']: the $node->type,
- * $element['#formatter']: the $formatter_name,
- * $element'#node']: the $node,
- * $element['#delta']: the delta of this item, like '0',
- * 
- */
-function theme_eventbrite_cck_formatter_default($element) {
-  return $element['#item']['safe'];
-}
-
-/**
- * Theme function for 'plain' example field formatter.
- */
-function theme_eventbrite_cck_formatter_plain($element) {
-  return strip_tags($element['#item']['safe']);
-}
-
-//==========================================//
-// DEFINING A WIDGET
-//==========================================//
-
-/**
- * Implementation of hook_widget_info().
- *
- * Here we indicate that the content module will handle
- * the default value and multiple values for these widgets.
- *
- * Callbacks can be omitted if default handing is used.
- * They're included here just so this module can be used
- * as an example for custom modules that might do things
- * differently.
- */
-function eventbrite_cck_widget_info() {
-  return array(
-    // The machine name of the widget, no more than 32 
-    // characters.
-    'eventbrite_cck_widget' => array(
-      // The human-readable label of the field that will be 
-      // seen in the Manage fields screen.
-      'label' => t('Eventbrite ID'),
-      // An array of the field types this widget can be 
-      // used with.
-      'field types' => array('eventbrite_cck'),
-      // Who will handle multiple values, default is core.
-      // 'CONTENT_HANDLE_MODULE' means the module does it.
-      // See optionwidgets for an example of a module that 
-      // handles its own multiple values.
-      'multiple values' => CONTENT_HANDLE_CORE,
-      'callbacks' => array(
-        // Who will create the default value, default is core.
-        // 'CONTENT_CALLBACK_CUSTOM' means the module does it.
-        // 'CONTENT_CALLBACK_NONE' means this widget has 
-        // no default value.
-        'default value' => CONTENT_CALLBACK_DEFAULT,
-      ),
-    ),
-  );
-}
-
-/**
- * Implementation of hook_widget_settings().
- */
- /*
-function eventbrite_cck_widget_settings($op, $widget) {
-  switch ($op) {
-    // Create the form element to be used on the widget 
-    // settings form. Widget settings can be different 
-    // for each shared instance of the same field and 
-    // should define the way the value is displayed to 
-    // the user in the edit form for that content type.
-    
-    case 'form':
-      $form = array();
-      $size = (isset($widget['size']) && is_numeric($widget['size'])) ? $widget['size'] : 60;
-      $form['size'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Size of textfield'),
-        '#default_value' => $size,
-        '#element_validate' => array('_element_validate_integer_positive'),
-        '#required' => TRUE,
-      );
-      return $form;
-    
-    // Return an array of the names of the widget settings 
-    // defined by this module. These are the items that 
-    // CCK will store in the widget definition and they 
-    // will be available in the $field['widget'] array.
-    // This should match the items defined in 'form' above.
-    case 'save':
-      return array('size');
-  }
-}
-*/
-/**
- * Implementation of hook_widget().
- *
- * Attach a single form element to the form. 
- * 
- * CCK core fields only add a stub element and builds 
- * the complete item in #process so reusable elements 
- * created by hook_elements can be plugged into any 
- * module that provides valid $field information.
- * 
- * Custom widgets that don't care about using hook_elements
- * can be built out completely at this time.
- *
- * If there are multiple values for this field and CCK is 
- * handling multiple values, the content module will call 
- * this function as many times as needed.
- *
- * @param $form
- *   the entire form array, 
- *   $form['#node'] holds node information
- * @param $form_state
- *   the form_state, 
- *   $form_state['values'][$field['field_name']]
- *   holds the field's form values.
- * @param $field
- *   the field array
- * @param $items
- *   array of default values for this field
- * @param $delta
- *   the order of this item in the array of 
- *   subelements (0, 1, 2, etc)
- *
- * @return
- *   the form item for a single element for this field
- */
-function eventbrite_cck_widget(&$form, &$form_state, $field, $items, $delta = 0) {
-  
-  $element['value'] = array(
-    '#type' => 'textfield',
-    '#default_value' => isset($items[$delta]['value']) ? $items[$delta]['value'] : NULL,
-    '#autocomplete_path' => $element['#autocomplete_path'],
-    //'#size' => !empty($field['widget']['size']) ? $field['widget']['size'] : 60,
-    '#attributes' => array('class' => 'eventbrite_cck'),
-    //'#maxlength' => !empty($field['max_length']) ? $field['max_length'] : NULL,
-  );
-  
-  // Used so that hook_field('validate') knows where to 
-  // flag an error in deeply nested forms.
-  if (empty($form['#parents'])) {
-    $form['#parents'] = array();
-  }
-  $element['_error_element'] = array(
-    '#type' => 'value',
-    '#value' => implode('][', array_merge($form['#parents'], array('value'))),
-  );
-  
-  return $element;
-}
