@@ -53,7 +53,7 @@ function eventbrite_cck_field_info() {
   return array(
     // Defining Eventbrite Event field
     'eventbrite_cck' => array(
-      'label' => t('Eventbrite Event'),
+      'label' => t('Eventbrite Simple Event'),
       'description' => t('Associate an eventbrite event with a node.'),
     ),
   );
