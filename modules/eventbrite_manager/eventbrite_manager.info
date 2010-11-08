@@ -1,0 +1,10 @@
+; $Id$
+name = Eventbrite Manager
+description = Advanced CCK field widgets and formatters for complete Eventbrite integration.
+version = "6.x-2.x-dev"
+core = 6.x
+package = Eventbrite
+
+dependencies[] = eventbrite
+dependencies[] = eventbrite_cck
+dependencies[] = content

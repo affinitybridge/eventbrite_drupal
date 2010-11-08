@@ -1,0 +1,40 @@
+<?php
+// $Id$
+// Notify CCK when this module is enabled, disabled, installed, and uninstalled
+// so CCK can do any necessary preparation or cleanup.
+/**
+ * @file
+ * Implementation of hook_install().
+ */
+function eventbrite_manager_install() {
+  drupal_load('module', 'content');
+  content_notify('install', 'eventbrite_manager');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function eventbrite_manager_uninstall() {
+  drupal_load('module', 'content');
+  content_notify('uninstall', 'eventbrite_manager');
+}
+
+/**
+ * Implementation of hook_enable().
+ *
+ * Notify content module when this module is enabled.
+ */
+function eventbrite_manager_enable() {
+  drupal_load('module', 'content');
+  content_notify('enable', 'eventbrite_manager');
+}
+
+/**
+ * Implementation of hook_disable().
+ *
+ * Notify content module when this module is disabled.
+ */
+function eventbrite_manager_disable() {
+  drupal_load('module', 'content');
+  content_notify('disable', 'eventbrite_manager');
+}
