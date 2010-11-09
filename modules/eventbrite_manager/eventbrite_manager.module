@@ -250,9 +250,7 @@ function eventbrite_manager_field($op, &$node, $field, &$items, $teaser, $page) 
           }
           */
           
-          // Then do the interface with Eventbrite
-          
-          /* TODO: Should we checking that ebid is valid?  Widget will not allow for editing
+          /* TODO: Should we checking that ebid is valid?  Widget will not allow for editing of this value, so should be good
           // Check to see that this is a gettable event
           if (!eventbrite_get('event_get', $item['ebid'])) {
             form_set_error($field['field_name'], t('"%ebid" is not a valid event id in the Eventbrite system', array('%ebid' => $item['ebid'])));
@@ -260,6 +258,29 @@ function eventbrite_manager_field($op, &$node, $field, &$items, $teaser, $page) 
           }
           */
 
+        }
+      }
+      return $items;
+
+    // This is where you make sure that user-provided 
+    // data is sanitized before being displayed.
+    case 'sanitize':
+      // TODO: this should be replaced to sanitize calls to the actual field item keys.
+      foreach ($items as $delta => $item) {
+        foreach ( $item as $col => $dat ) {
+          $items[$delta]['safe_' . $col ] = check_plain($item[ $col ]);
+        }
+      }
+      break;
+    
+    case 'presave':
+      if (is_array($items)) {
+        foreach ($items as $delta => $item) {
+          // If the field is empty just skip, wasn't filled in, that is valid
+          if (eventbrite_manager_content_is_empty($item, $field)) {
+          	continue;
+          }
+    	
           $event = new stdClass();
           $event->title = $item['title'];
           $event->description = $item['description'];
@@ -290,7 +311,13 @@ function eventbrite_manager_field($op, &$node, $field, &$items, $teaser, $page) 
           else {
           	// There is no ebid, which means event needs to be created
           	if ($event_id = eventbrite_save('event_new', $event)) {
-              drupal_set_message(t('The new event was successfully created'));
+              drupal_set_message(t('The new event was successfully created - '.$event_id));
+              // TODO: Figure out which of these calls are actually putting the variable in and remove cruft
+              $items[$delta]['ebid'] = $event_id;
+              $node_field = $node->$field['field_name'];
+              $node_field[$delta]['ebid'] = $event_id;
+              $node->$field['field_name'] = $node_field;
+              
               // TODO: Clear the events list cache so that the new event shows up
             }
             else {
@@ -300,19 +327,7 @@ function eventbrite_manager_field($op, &$node, $field, &$items, $teaser, $page) 
           }
         }
       }
-      return $items;
-
-    // This is where you make sure that user-provided 
-    // data is sanitized before being displayed.
-    case 'sanitize':
-      // TODO: this should be replaced to sanitize calls to the actual field item keys.
-      foreach ($items as $delta => $item) {
-        foreach ( $item as $col => $dat ) {
-          $items[$delta]['safe_' . $col ] = check_plain($item[ $col ]);
-        }
-      }
-      break;
-   
+      break; 
   }
   
   return $items;
@@ -380,11 +395,15 @@ function eventbrite_manager_event_widget_process($element, $edit, &$form_state, 
   if (isset($element['#access']) && empty($element['#access'])) {
     return $element;
   }
-	
+
+  // Make sure ebid gets set (it seems to require special handling)
   $defaults = $element['#value'];
+  if (isset($element['#default_value']['ebid'])) {
+  	$defaults['ebid'] = $element['#default_value']['ebid'];
+  }
   $field_name = $element['#field_name'];
   
-  $field = content_fields($element['#field_name'], $element['#type_name']);
+  $field = content_fields($field_name, $element['#type_name']);
   $delta = $element['#delta'];
   
   $element['ebid'] = array(
@@ -410,26 +429,13 @@ function eventbrite_manager_event_widget_process($element, $edit, &$form_state, 
   
   // TODO: Add configurability for default date values
   
-  // Set default event date 30 days in the future
+  // For now, set default event date 30 days in the future
   $default_ts = time() + (60 * 60 * 24 * 30);
   $default_datetime = date_convert($default_ts, DATE_UNIX, DATE_DATETIME);
   list($default_date) = explode(' ', $default_datetime);
   
   $default_start_datetime = $default_date .' '. '18:00';
   $default_end_datetime = $default_date .' '. '21:00';
-  
-  /* TODO: This was default date processing stuff, not sure that it's needed but maybe
-  // TODO: Set a variable for admin to configure default time
-  //       For now just put it two weeks in advance
-  $default_time = time() + (60 * 60 * 24 * 14);
-  $default_format = 'Y-m-d ha';
-  
-  // TODO: allow admin to set format string
-  //       For now just use basic
-  $event_format = 'Y-m-d h:ia';
-  $display_format = 'F-d-Y h:iA';
-   */
-  
   
   $element['start_date'] = array(
     '#title' => t('Start date'),
@@ -457,7 +463,9 @@ function eventbrite_manager_event_widget_process($element, $edit, &$form_state, 
   // TODO: widget is always date select for the dates, but when admin can configure date_popup then we will need to switch
 //  if ($element['start_date']['#type'] == 'date_select') {
   	// From/to selectors with lots of parts will look better if displayed one per row
+  	/* don't think we actually need this since it's indexing at unused key variable $from_field
     $element[$from_field]['#attributes'] = array('class' => 'date-clear');
+    */
 //  }
   
   $element['end_date'] = $element['start_date'];
@@ -472,7 +480,7 @@ function eventbrite_manager_event_widget_process($element, $edit, &$form_state, 
   // TODO: Must add a timezone field (possibly with offset)
  
   /* 
-  // TODO: If using date_popup, we made need to fill in #date_title
+  // TODO: If using date_popup, we made need to fill in #date_title - this code from Date module
   // Create label for error messages that make sense in multiple values and when the title field is left blank.
   if (!empty($field['multiple']) && empty($field['repeat'])) {
     $element[$from_field]['#date_title'] = t('@field_name From date value #@delta', array('@field_name' => $field['widget']['label'], '@delta' => $delta + 1));
