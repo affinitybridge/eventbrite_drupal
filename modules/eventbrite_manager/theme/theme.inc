@@ -38,6 +38,8 @@ function theme_eventbrite_manager_formatter_default($element) {
 
 	// OK, for the temp being, if there is no ebid on these puppies then call another alternate
 	//   function, that will theme without pulling from eventbrite server
+	
+	// TODO: Sort out this theming crap
   	if (isset($element['#item']['safe_ebid']) && !empty($event['safe_ebid'])) {
       if ($event = eventbrite_get('event_get', $element['#item']['safe_ebid'])) {
 	    return theme('eventbrite_cck_event', $event);

@@ -18,7 +18,7 @@
   </div>
   
   <div class="eventbrite_cck-event-date">
-      <?php print $start_date;?> - <?php print $end_date;?>
+      <?php print $date_range;?>
   </div>
   
   <div class="eventbrite_cck-event-description">

@@ -29,12 +29,21 @@ function eventbrite_admin_settings() {
     '#description' => t('Your user key for secure authentication. You can find it by <a href="http://www.eventbrite.com/userkeyapi" target="_blank">clicking here</a>'),
   );
   
-  $form['eventbrite_cache_lifetime'] = array(
+  // TODO: Provide better descriptions for min and max
+  $form['eventbrite_cache_minimum'] = array(
     '#type' => 'textfield',
-    '#title' => 'Default Cache Lifetime',
+    '#title' => 'Minimum Cache Lifetime',
     '#required' => TRUE,
-    '#default_value' => variable_get('eventbrite_cache_lifetime', 5),
-    '#description' => t('The default amount of time, in minutes, to cache results from the Eventbrite server.  This may be overridden in hook_eventbrite_request_alter'),
+    '#default_value' => variable_get('eventbrite_cache_minimum', 5),
+    '#description' => t('The minimum amount of time, in minutes, to cache results from the Eventbrite server.'),
+  );
+  
+  $form['eventbrite_cache_maximum'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Maximum Cache Lifetime',
+    '#required' => TRUE,
+    '#default_value' => variable_get('eventbrite_cache_maximum', 60),
+    '#description' => t('The maximum amount of time, in minutes, to cache results from the Eventbrite server.'),
   );
   
   return system_settings_form($form);
@@ -86,7 +95,7 @@ function eventbrite_admin_settings_submit($form, &$form_state) {
   // The validate hook checked the keys against the eventbrite server...so if we got to submit then we should be all good!!!
   // Meaning, we can set the valid keys variable to TRUE
   // TODO: Formalize validated status of Eventbrite keys
-  drupal_set_message('Submit hook successfully called');
+//  drupal_set_message('Submit hook successfully called');
   variable_set('eventbrite_valid_authentication', TRUE);
   return TRUE;
 }
@@ -111,12 +120,12 @@ function _eventbrite_admin_verify_key_authentication($app_key, $user_key) {
   // Send HTTP request to the server - nothing in the cache, so there's no other choice now
   if ($result = drupal_http_request(EVENTBRITE_SERVER .'user_get?'. $query_string)) {
     // Process the result if there was one, and return simplexml_load_string($result->data)
-    if ($result_string = _eventbrite_common_process_result($result)) {
+    if (_eventbrite_common_process_result($result)) {
       // Successful API call
-      $xml_data = simplexml_load_string($result_string);
+      $xml_object = $result->object;
 
       $eventbrite_user = new stdClass();
-      foreach ($xml_data as $key => $value) {
+      foreach ($xml_object as $key => $value) {
         $eventbrite_user->$key = (string)$value;
       }
       // TODO: possibly set some user_id values to integer (rather than string)

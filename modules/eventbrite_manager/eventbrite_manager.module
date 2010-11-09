@@ -190,6 +190,7 @@ function eventbrite_manager_field($op, &$node, $field, &$items, $teaser, $page) 
     // so don't validate widget values, only field values.
     
     case 'validate':
+    	drupal_set_message('here');
       if (is_array($items)) {
         foreach ($items as $delta => $item) {
           // DO validation here for the field
@@ -293,9 +294,10 @@ function eventbrite_manager_field($op, &$node, $field, &$items, $teaser, $page) 
           	// There is an ebid, which means that an edit/update needs to happen
           	$event->event_id = $item['ebid'];
           	
-            if ($event_id = eventbrite_save('event_update', $event)) {
+          	// TODO: This function should return an event, which will need to be parsed (and cleaned) before save
+          	if ($event = eventbrite_save('event_update', $event)) {
               drupal_set_message(t('This event was successfully updated'));
-              // TODO: Clear the events list cache so that the updated event shows up
+              // TODO: update field items with values from the server, even if it doesn't matter and they won't change
             }
             else {
               // Save request could not be completed
@@ -310,19 +312,21 @@ function eventbrite_manager_field($op, &$node, $field, &$items, $teaser, $page) 
           }
           else {
           	// There is no ebid, which means event needs to be created
-          	if ($event_id = eventbrite_save('event_new', $event)) {
-              drupal_set_message(t('The new event was successfully created - '.$event_id));
+          	// TODO: This function should return an event, which will need to be parsed (and cleaned) before save
+          	if ($event = eventbrite_save('event_new', $event)) {
+              drupal_set_message(t('The new event was successfully created - '.$event->id));
               // TODO: Figure out which of these calls are actually putting the variable in and remove cruft
-              $items[$delta]['ebid'] = $event_id;
-              $node_field = $node->$field['field_name'];
-              $node_field[$delta]['ebid'] = $event_id;
-              $node->$field['field_name'] = $node_field;
               
-              // TODO: Clear the events list cache so that the new event shows up
-            }
+              // TODO: Now that eventbrite_save returns an event object and not an event_id, all of these field
+              //         items should be updated
+              $items[$delta]['ebid'] = $event->id;
+              $node_field = $node->$field['field_name'];
+              $node_field[$delta]['ebid'] = $event->id;
+              $node->$field['field_name'] = $node_field;
+          	}
             else {
               // TODO: set a form error here so that the field does not validate (rather than dsm())
-              drupal_set_message('Could not update the event', 'error');
+              drupal_set_message('Could not create the event', 'error');
             }
           }
         }
@@ -506,6 +510,7 @@ function eventbrite_manager_event_widget_process($element, $edit, &$form_state, 
 
 function eventbrite_manager_event_widget_validate(&$element, &$form_state) {
   // TODO: Write full validation stuff in here
+  drupal_set_message('in widget validate');
   return;
 
   /*

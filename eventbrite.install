@@ -17,6 +17,12 @@ function eventbrite_schema() {
         'length' => 32,
         'not null' => TRUE,
       ),
+      'id' => array(
+        'type' => 'int', 
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
       'query_string' => array(
         'type' => 'varchar',
         'length' => 128,
@@ -32,7 +38,7 @@ function eventbrite_schema() {
         'not null' => TRUE,
       ),
     ),
-    'primary key' => array('op', 'query_string'),
+    'primary key' => array('op', 'id'),
   );
 
   return $schema;
