@@ -63,3 +63,10 @@ function eventbrite_errors($error_msg = '', $error_type = '') {
   }
   return $errors;
 }
+
+function eventbrite_timezone_offset($offset) {
+  $eb_timezone = 'GMT';
+  $eb_timezone .= ($offset < 0) ? '-' : '+';
+  $eb_timezone .= (abs($offset) >= 10) ? abs($offset) : '0'. abs($offset);
+  return $eb_timezone;
+}

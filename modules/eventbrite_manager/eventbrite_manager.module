@@ -39,7 +39,6 @@ function eventbrite_manager_theme() {
   );
 }
 
-
 //==========================================//
 // CCK FIELD HOOKS
 //==========================================//
@@ -62,15 +61,17 @@ function eventbrite_manager_field_info() {
 function eventbrite_manager_field_settings($op, $field) {
   switch ($op) {
   	// TODO: There will be settings that go on this form
-  	//       (Maybe we will have to come up with some)
-  	
-    /* 'form' and 'save' ops may not be needed for this field */
+  	//
+  	// -default date stuff likely
+  	//       (Maybe we will have to come up with some)  	
+    /* 
+    // 'form' and 'save' ops may not be needed for this field
+    // 
     // Create the form element to be used on the field 
     // settings form. Field settings will be the same for 
     // all shared instances of the same field and should 
     // define the way the value will be stored 
     // in the database.
-    /*
     case 'form':
       $form = array();
       $form['max_length'] = array(
@@ -84,23 +85,18 @@ function eventbrite_manager_field_settings($op, $field) {
         '#description' => t('The maximum length of the field in characters. Must be a number between 1 and 255'),
       );
       return $form;
-    */
+
     // Return an array of the names of the field settings 
     // defined by this module. These are the items that 
     // CCK will store in the field definition
     // and they will be available in the $field array.
     // This should match the items defined in 'form' above.
-    /*
+
     case 'save':
       return array('max_length');
     */
-    // Define the database storage for this field using 
-    // the same construct used by schema API. Most fields
-    // have only one column, but there can be any number 
-    // of different columns. After the schema API values, 
-    // add two optional values to each column, 
-    //  'views', to define a Views field 
-    //  'sortable', to add a Views sort field
+  	
+    // Define the database storage for this field
     case 'database columns':
       $columns['ebid'] = array(
         'type' => 'int', 
@@ -143,23 +139,20 @@ function eventbrite_manager_field_settings($op, $field) {
         'type' => 'varchar',
         'length' => 50,
         'not null' => FALSE,
-        'sortable' => TRUE,
-        'views' => FALSE,
+        'sortable' => FALSE,
+        'views' => TRUE,
       );
       
       $columns['offset'] = array(
         'type' => 'int',
         'not null' => FALSE,
-        'sortable' => TRUE,
+        'sortable' => FALSE,
         'views' => FALSE,
       );
       
       return $columns;
 
-    // Optional: Make changes to the default $data array 
-    // created for Views. Omit this if no changes are 
-    // needed, use it to add a custom handler or make 
-    // other changes.
+    // TODO: Decide if any changes need to be made to the default $data array created for Views.
     case 'views data':
       // Start with the $data created by CCK
       // and alter it as needed. The following
@@ -169,11 +162,10 @@ function eventbrite_manager_field_settings($op, $field) {
       $data = content_views_field_views_data($field);
       $db_info = content_database_info($field);
       $table_alias = content_views_tablename($field);
-      //$field_data = $data[$table_alias][$field['field_name'] .'_ebid'];
 
       // Make changes to $data as needed here.
-//      return $data + date_field_settings('views data', $field);
-
+      //$field_data = $data[$table_alias][$field['field_name'] .'_ebid'];
+      
       return $data;
       
   }
@@ -263,8 +255,7 @@ function eventbrite_manager_field($op, &$node, $field, &$items, $teaser, $page) 
       }
       return $items;
 
-    // This is where you make sure that user-provided 
-    // data is sanitized before being displayed.
+    // This is where you make sure that user-provided data is sanitized before being displayed.
     case 'sanitize':
       // TODO: this should be replaced to sanitize calls to the actual field item keys.
       foreach ($items as $delta => $item) {
@@ -275,20 +266,23 @@ function eventbrite_manager_field($op, &$node, $field, &$items, $teaser, $page) 
       break;
     
     case 'presave':
-      if (is_array($items)) {
+      if (is_array($items) && !empty($items)) {
         foreach ($items as $delta => $item) {
           // If the field is empty just skip, wasn't filled in, that is valid
           if (eventbrite_manager_content_is_empty($item, $field)) {
           	continue;
           }
-    	
+
           $event = new stdClass();
           $event->title = $item['title'];
           $event->description = $item['description'];
           $event->start_date = $item['start_date'];
           $event->end_date = $item['end_date'];
-          // TODO: Add proper timezone processing
-          $event->timezone = 'GMT+01';
+
+          // Calculate timezone and offset
+          $start_date = date_create($item['start_date'], timezone_open($item['timezone']));
+          $items[$delta]['offset'] = $offset = $start_date->getOffset() / 3600;
+          $event->timezone = eventbrite_timezone_offset($items[$delta]['offset']);
 
           if ($item['ebid']) {
           	// There is an ebid, which means that an edit/update needs to happen
@@ -297,6 +291,7 @@ function eventbrite_manager_field($op, &$node, $field, &$items, $teaser, $page) 
           	// TODO: This function should return an event, which will need to be parsed (and cleaned) before save
           	if ($event = eventbrite_save('event_update', $event)) {
               drupal_set_message(t('This event was successfully updated'));
+              // TODO: parse and clean the event
               // TODO: update field items with values from the server, even if it doesn't matter and they won't change
             }
             else {
@@ -312,11 +307,11 @@ function eventbrite_manager_field($op, &$node, $field, &$items, $teaser, $page) 
           }
           else {
           	// There is no ebid, which means event needs to be created
-          	// TODO: This function should return an event, which will need to be parsed (and cleaned) before save
           	if ($event = eventbrite_save('event_new', $event)) {
               drupal_set_message(t('The new event was successfully created - '.$event->id));
+
               // TODO: Figure out which of these calls are actually putting the variable in and remove cruft
-              
+              // TODO: parse and clean the event
               // TODO: Now that eventbrite_save returns an event object and not an event_id, all of these field
               //         items should be updated
               $items[$delta]['ebid'] = $event->id;
@@ -325,7 +320,7 @@ function eventbrite_manager_field($op, &$node, $field, &$items, $teaser, $page) 
               $node->$field['field_name'] = $node_field;
           	}
             else {
-              // TODO: set a form error here so that the field does not validate (rather than dsm())
+            	// TODO: set a form error here so that the field does not validate (rather than dsm())
               drupal_set_message('Could not create the event', 'error');
             }
           }
@@ -350,7 +345,6 @@ function eventbrite_manager_content_is_empty($item, $field) {
   if (empty($item['ebid']) && empty($item['title'])) {
     return TRUE;
   }
-  return FALSE;
 }
 
 function eventbrite_manager_default_value(&$form, &$form_state, $field, $delta) {
@@ -422,6 +416,7 @@ function eventbrite_manager_event_widget_process($element, $edit, &$form_state, 
     '#size' => 60,
     '#maxlength' => 255,
     '#weight' => 0,
+    '#required' => $element['#required'],
   );
 
   $element['description'] = array(
@@ -449,58 +444,43 @@ function eventbrite_manager_event_widget_process($element, $edit, &$form_state, 
     '#type' => 'date_select',
     '#default_value' => isset($element['#value']['start_date']) ? $element['#value']['start_date'] : $default_start_datetime,
     '#weight' => 2,
-    // TODO: This really should be required, removed right now to remove an error
-//    '#required' => 1,
+    '#required' => 1,
     '#delta'         => $delta,
     // TODO: #date_formet should not be coming from a variable, it should come from a value on field settings form
     //       Not sure how to work granularity in like this code does:
     //       '#date_format' => date_limit_format(date_input_format($element, $field), $field['granularity']),  
     '#date_format' => variable_get('eventbrite_manager_default_date_format', 'F-d-Y h:iA'),
     // TODO: Add something about #date_timezone
-//    '#date_timezone' => $element['#date_timezone'],  
+    '#date_timezone' => $element['#date_timezone'],
     '#date_text_parts'  => array(),
     '#date_increment'   => 5,
     '#date_year_range'  => '0:+1',
     '#date_label_position' => 'none',
   );
 
-  // TODO: widget is always date select for the dates, but when admin can configure date_popup then we will need to switch
-//  if ($element['start_date']['#type'] == 'date_select') {
-  	// From/to selectors with lots of parts will look better if displayed one per row
-  	/* don't think we actually need this since it's indexing at unused key variable $from_field
-    $element[$from_field]['#attributes'] = array('class' => 'date-clear');
-    */
-//  }
+  // TODO: Add support for date_popup (not just date_select)
+  //    date_popup may need #date_titme field filled in on date elements- see date_elements.inc line 338
   
+  // This allows date elements to float on the same line
+  //   Must be for date_popup as it doesn't do anything with date_select
+  // $element['#date_float'] = TRUE;
+  
+  // Populate end date with start date values
   $element['end_date'] = $element['start_date'];
   $element['end_date']['#title'] = t('End date');
   $element['end_date']['#default_value'] = isset($element['#value']['end_date']) ? $element['#value']['end_date'] : $default_end_datetime;
   $element['end_date']['#weight'] += .5;
   
-  // This allows date elements to float on the same line
-  //   Must be for date_popup as it doesn't do anything with date_select
-  $element['#date_float'] = TRUE;
+  // TODO: Add user timezone to the mix, currently default is site default
+  $element['timezone'] = array(
+    '#type' => 'date_timezone',
+    '#options' => date_timezone_names($element['#required']),
+    '#weight' => 3,
+    '#default_value' => isset($element['#value']['timezone']) ? $element['#value']['timezone'] : variable_get('date_default_timezone_name', ''),//$default_start_datetime,
+    // Timezone may need to allow blank timezone labels and would then not support being required
+    '#required' => 1, //$element['#required'],
+  );
 
-  // TODO: Must add a timezone field (possibly with offset)
- 
-  /* 
-  // TODO: If using date_popup, we made need to fill in #date_title - this code from Date module
-  // Create label for error messages that make sense in multiple values and when the title field is left blank.
-  if (!empty($field['multiple']) && empty($field['repeat'])) {
-    $element[$from_field]['#date_title'] = t('@field_name From date value #@delta', array('@field_name' => $field['widget']['label'], '@delta' => $delta + 1));
-    if (!empty($field['todate'])) {
-      $element[$to_field]['#date_title'] = t('@field_name To date value #@delta', array('@field_name' => $field['widget']['label'], '@delta' => $delta + 1));
-    }
-  }
-  elseif (!empty($field['todate'])) {
-    $element[$from_field]['#date_title'] = t('@field_name From date', array('@field_name' => $field['widget']['label']));
-    $element[$to_field]['#date_title'] = t('@field_name To date', array('@field_name' => $field['widget']['label']));
-  }
-  else {
-    $element[$from_field]['#date_title'] = $field['widget']['label'];
-  }
-  */
-  
   // Date had this, may as well leave it in
   // Make sure field info will be available to the validator which does not get the values in $form.
   $form_state['#field_info'][$field['field_name']] = $field;
@@ -509,31 +489,57 @@ function eventbrite_manager_event_widget_process($element, $edit, &$form_state, 
 }
 
 function eventbrite_manager_event_widget_validate(&$element, &$form_state) {
-  // TODO: Write full validation stuff in here
-  drupal_set_message('in widget validate');
-  return;
-
-  /*
-  // TODO: See if this is needed
-  // If the whole field is empty and that's OK, stop now.
-  if (empty($element['#post'][$field_name]) && !$element['#required']) {
-    return;
-  }
-  */  
-
   // Standard widget validate stuff
   $form_values = $form_state['values'];
   $field_name = $element['#field_name'];
   $delta = $element['#delta'];
+  $field = $form_state['#field_info'][$field_name];
   
-  // TODO: put some of this date stuff in the validation
-  $field = $form_state['#field_info'][$element['#field_name']];
-  $from_field = 'value';
-  $to_field = 'value2';
-  $tz_field = 'timezone';
-  $offset_field = 'offset';
-  $offset_field2 = 'offset2';
+  // TODO: See if this is needed
+  // If the whole field is empty and that's OK, stop now.
+  if (empty($element['#post'][$field_name]) && !$element['#required']) {
+  	drupal_set_message('LOOKY LOOKY NOTE: This chunk got called');
+    return;
+  }
   
+  // If ebid and title are both empty then consider the field empty (no validation needed)
+  if (empty($element['ebid']['#value']) && empty($element['title']['#value'])) {
+  	drupal_set_message('Empty widget at delta '.$delta);
+  	return;
+  }
+  
+  if (empty($element['title']['#value'])) {
+  	// TODO: Figure out a way for this form_set_error to be put on just the title field for this delta value
+    // TODO: add $delta value to error msg
+  	form_set_error($field_name, t('The title field is required for event submission in !field_label', array('!field_label' => $field['widget']['label'])));
+  }
+
+  // Date items and timezone are #required so no need here to look for them
+  
+  // TODO: Add in a call to date_popup_input_value (this coe is from date_select_input_value
+  // These are DATETIME strings (ISO dates)
+  $start_date = date_select_input_value($element['start_date']);
+  $end_date = date_select_input_value($element['end_date']);
+  
+  if ($start_date > $end_date) {
+      // TODO: no real need to call form_set_value()
+//      form_set_value($element['end_date'], 'end_date', $form_state);
+    // TODO: add $delta value to error msg
+    form_set_error($field_name, t('The end date field must be greater than the start date field in !field_label', array('!field_label' => $field['widget']['label'])));
+  }
+
+  // Don't look for further errors if errors are already flagged
+  // because otherwise we'll show errors on the nested elements
+  // more than once. (?)
+  if (form_get_errors()) {
+  	return;
+  }
+
+  // TODO: probably shouldn't return here, should do more date processing
+  //       just making sure that, for now, we don't need the form_set_value()s for any processing
+  return;
+
+  // TODO: Check out how date provides alternate error reporting:
   // Unfortunately, due to the fact that much of the processing is already
   // done by the time we get here, it is not possible highlight the field
   // with an error, we just try to explain which element is creating the
@@ -542,125 +548,61 @@ function eventbrite_manager_event_widget_validate(&$element, &$form_state) {
   $error_field = array_pop($parent);
   $errors = array();
 
-  // Check for empty 'From date', which could either be an empty
-  // value or an array of empty values, depending on the widget.
-  $empty = TRUE;
-  if (!empty($item[$from_field])) {
-    if (!is_array($item[$from_field])) {
-      $empty = FALSE;
-    }
-    else {
-      foreach ($item[$from_field] as $key => $value) {
-        if (!empty($value)) {
-          $empty = FALSE;
-          break;
-        }
-      }
-    }
-  }
-  if ($empty) {
-    $item = date_element_empty($element, $form_state);
-    if (!$element['#required']) {
-      return;
-    }
-  }
-  // Don't look for further errors if errors are already flagged
-  // because otherwise we'll show errors on the nested elements
-  // more than once.
-  elseif (!form_get_errors()) {
-                
-    // Check todate input for blank values and substitute in fromdate
-    // values where needed, then re-compute the todate with those values.
-    if ($field['todate']) {
-      $merged_date = array();
-      $to_date_empty = TRUE;
-      foreach ($posted[$to_field] as $part => $value) {
-        $to_date_empty = $to_date_empty && empty($value);
-        $merged_date[$part] = empty($value) ? $posted[$from_field][$part] : $value;
-        if ($part == 'ampm' && $merged_date['ampm'] == 'pm' && $merged_date['hour'] < 12) {
-          $merged_date['hour'] += 12;
-        }
-        elseif ($part == 'ampm' && $merged_date['ampm'] == 'am' && $merged_date['hour'] == 12) {
-          $merged_date['hour'] -= 12;
-        }
-      }
-              
-      // If all date values were empty and a date is required, throw 
-      // an error on the first element. We don't want to create 
-      // duplicate messages on every date part, so the error will 
-      // only go on the first.  
-      if ($to_date_empty && $field['todate'] == 'required') {
-        $errors[] = t('Some value must be entered in the To date.');
-      }
-
-      $element[$to_field]['#value'] = $merged_date;
-      
-      // Call the right function to turn this altered user input into
-      // a new value for the todate.
-      $item[$to_field] = $merged_date;
-    }
-    else {
-      $item[$to_field] = $item[$from_field];
-    }
+  // TODO: Add in a call to date_popup_input_value (this coe is from date_select_input_value
+  // These are DATETIME strings (ISO dates)
+  $from_date = date_select_input_value($element['start_date']);
+  $to_date = date_select_input_value($element['end_date']);
     
-    $from_date = date_input_value($field, $element[$from_field]);
-    if (!empty($field['todate'])) {
-      $to_date = date_input_value($field, $element[$to_field]);
-    }
-    else {
-      $to_date = $from_date;
-    }
-    
-    // Neither the from date nor the to date should be empty at this point
-    // unless they held values that couldn't be evaluated.
-    if (!$field['required'] && (empty($from_date) || empty($to_date))) {
-      $item = date_element_empty($element, $form_state);
-      $errors[] = t('The dates are invalid.');
-    }
-    elseif (!empty($field['todate']) && $from_date > $to_date) {
-      form_set_value($element[$to_field], $to_date, $form_state);
-      $errors[] = t('The To date must be greater than the From date.');
-    }
-    else {
-      // Convert input dates back to their UTC values and re-format to ISO
-      // or UNIX instead of the DATETIME format used in element processing.
-      $timezone = !empty($item[$tz_field]) ? $item[$tz_field] : $element['#date_timezone'];
-      $timezone_db = date_get_timezone_db($field['tz_handling']);
-      $item[$tz_field] = $timezone;
+  // TODO: Check for date validity--most of this is probably not needed
+  $from_field = 'start_date';
+  $to_field = 'end_date';
+  $tz_field = 'timezone';
+  $offset_field = 'offset';
+  $offset_field2 = 'offset2';
+  
+  // Convert input dates back to their UTC values and re-format to ISO
+  // or UNIX instead of the DATETIME format used in element processing.
+  $timezone = !empty($item['timezone']) ? $item['timezone'] : $element['#date_timezone'];
+  $timezone_db = date_get_timezone_db($field['tz_handling']);
+  // Not sure why timezone would be added back into the form here--doesn't make much sense
+  $item[$tz_field] = $timezone;
 
-      $from_date = date_make_date($from_date, $timezone);
-      $item[$offset_field] = date_offset_get($from_date);
+  // Check date to make offset field
+  $from_date = date_make_date($from_date, $timezone);
+  $item[$offset_field] = date_offset_get($from_date);    
+  $to_date = date_make_date($to_date, $timezone);
+  $item[$offset_field2] = date_offset_get($to_date);
+
+  // Get test dates in this timezone, to make sure that dates are valid
+  //   (do this before changing the timezone to the db
+  $test_from = date_format($from_date, 'r');
+  $test_to = date_format($to_date, 'r');
+
+  // Put the dates back into the form as UTC?
+  // This can be skipped if timezones are set properly in the widget
+  date_timezone_set($from_date, timezone_open($timezone_db));
+  date_timezone_set($to_date, timezone_open($timezone_db));
+  $item[$from_field] = date_format($from_date, date_type_format($field['type']));
+  $item[$to_field] = date_format($to_date, date_type_format($field['type']));
       
-      $to_date = date_make_date($to_date, $timezone);
-      $test_from = date_format($from_date, 'r');
-      $test_to = date_format($to_date, 'r');
-      
-      $item[$offset_field2] = date_offset_get($to_date);
-      date_timezone_set($from_date, timezone_open($timezone_db));
-      date_timezone_set($to_date, timezone_open($timezone_db));
-      $item[$from_field] = date_format($from_date, date_type_format($field['type']));
-      $item[$to_field] = date_format($to_date, date_type_format($field['type']));
-      if (isset($form_values[$field_name]['rrule'])) {
-        $item['rrule'] = $form_values[$field['field_name']]['rrule'];
-      }
-      
-      // Test a roundtrip back to the original timezone to catch
-      // invalid dates, like 2AM on the day that spring daylight savings
-      // time begins in the US.
-      date_timezone_set($from_date, timezone_open($timezone));
-      date_timezone_set($to_date, timezone_open($timezone));
-      if ($test_from != date_format($from_date, 'r')) {
-        $errors[] = t('The From date is invalid.');
-      }
-      if ($test_to != date_format($to_date, 'r')) {
-        $errors[] = t('The To date is invalid.');
-      }
-      if (empty($errors)) {
-        form_set_value($element, $item, $form_state);
-      }
-    }
+  // Test a roundtrip back to the original timezone to catch
+  // invalid dates, like 2AM on the day that spring daylight savings
+  // time begins in the US.
+  date_timezone_set($from_date, timezone_open($timezone));
+  date_timezone_set($to_date, timezone_open($timezone));
+  if ($test_from != date_format($from_date, 'r')) {
+    $errors[] = t('The From date is invalid.');
   }
-  if (!empty($errors)) {
+  if ($test_to != date_format($to_date, 'r')) {
+    $errors[] = t('The To date is invalid.');
+  }
+  
+  if (empty($errors)) {
+  	// TODO: Not sure why we need to copy this element back into the form
+//    form_set_value($element, $item, $form_state);
+    return;
+  }
+  else {
     if ($field['multiple']) {
       form_set_error($error_field, t('There are errors in @field_name value #@delta:', array('@field_name' => $field['widget']['label'], '@delta' => $delta + 1)) . theme('item_list', $errors));
     }
@@ -668,9 +610,9 @@ function eventbrite_manager_event_widget_validate(&$element, &$form_state) {
       form_set_error($error_field, t('There are errors in @field_name:', array('@field_name' => $field['widget']['label'])) . theme('item_list', $errors));      
     }
   }
-
-	
-  // Check to see that this is a gettable event (maybe this should be left in in case of ebid present
+  
+  /*
+  // TODO: Should we check the ebid, if there is one, to see if it is a gettable event
   if (!eventbrite_get('event_get', $event_id)) {
   	form_set_error(
       $element, 
@@ -679,8 +621,8 @@ function eventbrite_manager_event_widget_validate(&$element, &$form_state) {
         array('%ebid' => $event_id, '%field' => $ftitle)
       )
     );
-    return false;
   }
+  */
   
 }
 
@@ -689,24 +631,16 @@ function eventbrite_manager_event_widget_validate(&$element, &$form_state) {
  */
 function eventbrite_manager_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   module_load_include('inc', 'date_api', 'date_api_elements.inc');
-	
+
   // TODO: remove switch statement if this ends up being the only widget defined by eventbrite_manager
   switch ($field['widget']['type']) {
     case 'eventbrite_manager_event_widget':
-      /*
-      // TODO: I think this can be removed due to change in $element assigment below
-      if (!isset($items[$delta])) {
-      	$items[$delta] = array();
-      }
-      */
-    	
       $element = array(
         '#type' => 'eventbrite_manager_event_widget',
         '#default_value' => isset($items[$delta]) ? $items[$delta] : array(),
-//        '#default_value' => isset($items[$delta]) ? $items[$delta] : '',
       );
       
-      // TODO: This date stuff probably won't be needed
+      // TODO: This stuff can be very likely gotten rid of
       /*
       foreach (array('start_date', 'end_date') as $processed) {
         if (!isset($items[$delta][$processed])) {

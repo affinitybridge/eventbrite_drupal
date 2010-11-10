@@ -55,9 +55,9 @@ function template_preprocess_eventbrite_manager_event(&$vars) {
   $vars['description'] = $event['safe_description'];
 
   $vars['start_date'] = $event['safe_start_date'];
-  $vars['start_date_ts'] = date_convert($event['safe_start_date'], DATE_DATETIME, DATE_UNIX);
+  $vars['start_date_ts'] = date_convert($event['safe_start_date'], DATE_DATETIME, DATE_UNIX, $event['timezone']);
   $vars['end_date'] = $event['safe_end_date'];
-  $vars['end_date_ts'] = (int)date_convert($event['safe_end_date'], DATE_DATETIME, DATE_UNIX);
+  $vars['end_date_ts'] = (int)date_convert($event['safe_end_date'], DATE_DATETIME, DATE_UNIX, $event['timezone']);
 
   // TODO: Add the t() function here
   $vars['date_range'] = format_date($vars['start_date_ts'], 'medium') .' - '. format_date($vars['end_date_ts'], 'medium');
