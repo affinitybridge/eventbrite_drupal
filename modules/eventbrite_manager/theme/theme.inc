@@ -20,14 +20,13 @@ function theme_eventbrite_manager_event_widget(&$element) {
  * 
  */
 function theme_eventbrite_manager_formatter_default($element) {
-  // When event_manager field is loaded, an event_get call is made
-  //   on load op and data is refreshed as needed
-  
-  // TODO: This WILL not work as is because we don't have an EBid
-  // TODO: Not sure when we would be coming in here without having an eventbrite ID
-  //         This may have just applied earlier on in the process before event creation
+  // TODO: Should empty fields be coming in here for theming?
+  //       Do we really need to be checking for ebid here?
 
-  return theme('eventbrite_manager_event', $element['#item']);
+  // Do not format this (empty) field if ebid is not set
+  if ($element['#item']['ebid']) {
+    return theme('eventbrite_manager_event', $element['#item']);
+  }
 }
 
 /*
