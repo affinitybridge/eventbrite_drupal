@@ -38,7 +38,7 @@ function eventbrite_schema() {
         'not null' => TRUE,
       ),
     ),
-    'primary key' => array('op', 'id'),
+    'primary key' => array('op', 'id', 'query_string'),
   );
 
   return $schema;
