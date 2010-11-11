@@ -6,5 +6,5 @@ core = 6.x
 package = Eventbrite
 
 dependencies[] = eventbrite
-dependencies[] = eventbrite_cck
+dependencies[] = date_api
 dependencies[] = content
