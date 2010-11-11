@@ -3,7 +3,8 @@
 
 /**
  * @file
- * Manages and verifies the authentication params and settings used for communication with Eventbrite server.
+ * Manages and verifies the authentication params and settings
+ *   used for communication with Eventbrite server.
  */
 
 module_load_include('inc', 'eventbrite', 'includes/eventbrite.common');
@@ -29,12 +30,12 @@ function eventbrite_admin_settings() {
     '#description' => t('Your user key for secure authentication. You can find it by <a href="http://www.eventbrite.com/userkeyapi" target="_blank">clicking here</a>'),
   );
   
-  // TODO: Provide better descriptions for min and max
   $form['eventbrite_cache_minimum'] = array(
     '#type' => 'textfield',
     '#title' => 'Minimum Cache Lifetime',
     '#required' => TRUE,
     '#default_value' => variable_get('eventbrite_cache_minimum', 5),
+    // TODO: Provide better descriptions for min and max time
     '#description' => t('The minimum amount of time, in minutes, to cache results from the Eventbrite server.'),
   );
   
@@ -43,6 +44,7 @@ function eventbrite_admin_settings() {
     '#title' => 'Maximum Cache Lifetime',
     '#required' => TRUE,
     '#default_value' => variable_get('eventbrite_cache_maximum', 60),
+    // TODO: Provide better descriptions for min and max time
     '#description' => t('The maximum amount of time, in minutes, to cache results from the Eventbrite server.'),
   );
   
@@ -57,7 +59,8 @@ function eventbrite_admin_settings_validate($form, &$form_state) {
   $user_key = $form_state['values']['eventbrite_user_key'];
 
   if (empty($app_key) || empty($user_key)) {
-    // These form elements are set as #required, so if either are empty, there will be a form error set (just return FALSE)
+    // These form elements are set as #required, so if either are empty,
+    //   there will be a form error set (just return FALSE)
     return FALSE;
   }
 
@@ -66,6 +69,7 @@ function eventbrite_admin_settings_validate($form, &$form_state) {
   }
 
   // Keys did not validate
+  //   It's ok to display error messages, this will just be to the admin
   if ($errors = eventbrite_errors()) {
     foreach ($errors as $error_type => $error_msg) {
       switch ($error_type) {
@@ -92,18 +96,17 @@ function eventbrite_admin_settings_validate($form, &$form_state) {
  * Process settings form
  */
 function eventbrite_admin_settings_submit($form, &$form_state) {
-  // The validate hook checked the keys against the eventbrite server...so if we got to submit then we should be all good!!!
+  // The validate hook checked the keys against the eventbrite server
+  //   by getting here we know that authentication was made
   // Meaning, we can set the valid keys variable to TRUE
   // TODO: Formalize validated status of Eventbrite keys
-//  drupal_set_message('Submit hook successfully called');
   variable_set('eventbrite_valid_authentication', TRUE);
   return TRUE;
 }
 
 /*
- * Function to test the keys entered by the user
- * This may not need to happen very often
- * Will definitely need refactoring
+ * Function to test the keys entered by the user (will not happen often)
+ * TODO: look into refactoring, this only gets called in seetings form
  *
  * This will not be hooked into the main request processing, which by default
  *   authenticates with the api key variable (ie rather than just entering one).
@@ -114,22 +117,23 @@ function _eventbrite_admin_verify_key_authentication($app_key, $user_key) {
     return FALSE;
   }
 
-  // This function builds its own request rather than tying into the module's request handling functions
+  // This function builds its own request rather than tying into the module's
+  //   request handling functions
   $query_string = 'app_key='. $app_key .'&user_key='. $user_key;
 
-  // Send HTTP request to the server - nothing in the cache, so there's no other choice now
+  // Send HTTP request to the server
   if ($result = drupal_http_request(EVENTBRITE_SERVER .'user_get?'. $query_string)) {
     // Process the result if there was one, and return simplexml_load_string($result->data)
     if (_eventbrite_common_process_result($result)) {
       // Successful API call
       $xml_object = $result->object;
 
+      // TODO: write a populate user function much like populate event
       $eventbrite_user = new stdClass();
       foreach ($xml_object as $key => $value) {
         $eventbrite_user->$key = (string)$value;
       }
-      // TODO: possibly set some user_id values to integer (rather than string)
-      //       (not sure if anything would ever be done with this returned user anyway)
+      // Return user, at this point no code is doing anything with it
       return $eventbrite_user;
     }
   }
