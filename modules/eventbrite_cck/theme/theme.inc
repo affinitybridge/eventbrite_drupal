@@ -29,7 +29,7 @@ function template_preprocess_eventbrite_cck_event(&$vars) {
   $vars['end_date'] = $event->end_date;
   $vars['end_date_ts'] = strtotime($event->end_date);
 
-  // TODO: Add the t() function here
+  // TODO: Add the t() function here for date range
   $vars['date_range'] = format_date($vars['start_date_ts'], 'medium') .' - '. format_date($vars['end_date_ts'], 'medium');
   
 }

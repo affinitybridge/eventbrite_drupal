@@ -64,6 +64,8 @@ function eventbrite_cck_field_info() {
  */
 function eventbrite_cck_field_settings($op, $field) {
   switch ($op) {
+  	// TODO: Allow user to set user id here
+  	
     /* 'form' and 'save' ops may not be needed for this field */
     // Create the form element to be used on the field 
     // settings form. Field settings will be the same for 
@@ -208,7 +210,7 @@ function eventbrite_cck_widget_info() {
       ),
       'description' => 'An Edit widget that takes the Eventbrite event id in a textfield',
     ),
-    // Event Title widget allows user to eelect an Eventbrite event by title
+    // Event Title widget allows user to select an Eventbrite event by title
     //   from a list of those events created with the Application Key user
     'eventbrite_cck_event_title' => array(
       'label' => t('Eventbrite Title Select box'),
@@ -242,6 +244,9 @@ function eventbrite_cck_elements() {
   return $elements;
 }
 
+/**
+ * Process Event ID widget
+ */
 function eventbrite_cck_event_id_widget_process($element, $edit, &$form_state, $form) {
   $defaults = $element['#value'];
   $field = content_fields($element['#field_name'], $element['#type_name']);
@@ -258,6 +263,9 @@ function eventbrite_cck_event_id_widget_process($element, $edit, &$form_state, $
   return $element;
 }
 
+/**
+ * Process Event Title widget
+ */
 function eventbrite_cck_event_title_widget_process($element, $edit, &$form_state, $form) {
   $defaults = $element['#value'][$element['#delta']];
   $field = content_fields($element['#field_name'], $element['#type_name']);
@@ -281,6 +289,9 @@ function eventbrite_cck_event_title_widget_process($element, $edit, &$form_state
   return $element;
 }
 
+/**
+ * Validate either Event ID or Event Title widgets
+ */
 function eventbrite_cck_event_widget_validate(&$element, &$form_state) {
   $event_id = $element['ebid']['#value'];
   if (empty($event_id)) {
