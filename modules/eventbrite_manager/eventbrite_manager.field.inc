@@ -221,7 +221,7 @@ function _eventbrite_manager_field_validate(&$node, $field, &$items, $teaser, $p
       }
       if (isset($item['ebid']) && !empty($item['ebid'])) {
         // EB_ID is set, that means all required field elements need to be set as well
-        if (empty($item['title'])) {
+      	if (empty($item['title'])) {
           form_set_error($field['field_name'], t('The title field is required'));
           return false;
         }
@@ -294,29 +294,32 @@ function _eventbrite_manager_field_sanitize(&$node, $field, &$items, $teaser, $p
   while (!empty($items[$delta]['data']) && is_string($items[$delta]['data'])) {
     $items[$delta]['data'] = unserialize($items[$delta]['data']);
   }
-    	
+  
   // TODO: this should be replaced to sanitize calls to the actual field item keys.
   foreach ($items as $delta => $item) {
-    foreach ( $item as $col => $dat ) {
-      switch ($col) {
-        case 'data':
-        case 'discounts':
-        case 'payment':
-        case 'tickets':
-          // Get the 'data' column stored by CCK into an array. This is necessary
-          // for Views, which doesn't call the "load" $op and to fix an issue with
-          // CCK double-serializing data.
-          // See the FileField issue http://drupal.org/node/402860.
-          // And the CCK issue http://drupal.org/node/407446.
-          while (!empty($items[$delta][$col]) && is_string($items[$delta][$col])) {
-            $items[$delta][$col] = unserialize($items[$delta][$col]);
-          }
-          // TODO: maybe add some processing for serialized values
-          break;
+  	// TODO: Should not have to test that $item is non-empty,
+  	//       empty fields should not be in sanitize data
+  	if ($item) {
+      foreach ( $item as $col => $dat ) {
+        switch ($col) {
+          case 'data':
+          case 'discounts':
+          case 'payment':
+          case 'tickets':
+            // Get the 'data' column stored by CCK into an array. This is necessary
+            // for Views, which doesn't call the "load" $op and to fix an issue with
+            // CCK double-serializing data.
+            // See the FileField issue http://drupal.org/node/402860.
+            // And the CCK issue http://drupal.org/node/407446.
+            while (!empty($items[$delta][$col]) && is_string($items[$delta][$col])) {
+              $items[$delta][$col] = unserialize($items[$delta][$col]);
+            }
+            // TODO: maybe add some processing for serialized values
+            break;
           
-        default:
-          $items[$delta]['safe_' . $col ] = check_plain($item[ $col ]);
-          
+          default:
+            $items[$delta]['safe_' . $col ] = check_plain($item[ $col ]);
+        }
       }
     }
   }
