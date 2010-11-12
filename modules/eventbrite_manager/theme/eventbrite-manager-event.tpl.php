@@ -25,4 +25,9 @@
   <div class="eventbrite_manager-event-description">
       <?php print($description);?>
   </div>
+
+  <div class="eventbrite_manager-event-attend">
+      <?php print($attend_link);?>
+  </div>
 </div>
+  

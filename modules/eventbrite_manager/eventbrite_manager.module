@@ -44,12 +44,31 @@ function eventbrite_manager_theme() {
     'eventbrite_manager_formatter_default' => $base + array(
       'arguments' => array('element' => NULL)
     ),
+    'eventbrite_manager_formatter_teaser' => $base + array(
+      'arguments' => array('element' => NULL)
+    ),
+    'eventbrite_manager_formatter_ticket_embed' => $base + array(
+      'arguments' => array('element' => NULL)
+    ),
+    'eventbrite_manager_formatter_registration_embed' => $base + array(
+      'arguments' => array('element' => NULL)
+    ),
+    'eventbrite_manager_formatter_countdown_embed' => $base + array(
+      'arguments' => array('element' => NULL)
+    ),
+    'eventbrite_manager_formatter_calendar_embed' => $base + array(
+      'arguments' => array('element' => NULL)
+    ),
     'eventbrite_manager_event_widget' => $base + array(
       'arguments' => array('element' => NULL),
     ),
     'eventbrite_manager_event' => $base + array(
       'arguments' => array('event' => NULL),
       'template' => 'eventbrite-manager-event'
+    ),
+    'eventbrite_manager_event_teaser' => $base + array(
+      'arguments' => array('event' => NULL),
+      'template' => 'eventbrite-manager-event-teaser'
     ),
   );
 }
@@ -196,6 +215,35 @@ function eventbrite_manager_field_formatter_info() {
     // Default formatter - Event details
     'default' => array(
       'label' => t('Event details'),
+      'field types' => array('eventbrite_manager'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+    'teaser' => array(
+      'label' => t('Event teaser'),
+      'field types' => array('eventbrite_manager'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+    // Registration embed widget from Eventbrite
+    'registration_embed' => array(
+      'label' => t('Registration Embed'),
+      'field types' => array('eventbrite_manager'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+    // Ticket embed widget from Eventbrite
+    'ticket_embed' => array(
+      'label' => t('Ticket Embed'),
+      'field types' => array('eventbrite_manager'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+    // Registration Page embed widget from Eventbrite
+    'countdown_embed' => array(
+      'label' => t('Countdown Embed'),
+      'field types' => array('eventbrite_manager'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+    // Registration Page embed widget from Eventbrite
+    'calendar_embed' => array(
+      'label' => t('Calendar Embed'),
       'field types' => array('eventbrite_manager'),
       'multiple values' => CONTENT_HANDLE_CORE,
     ),
