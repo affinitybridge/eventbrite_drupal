@@ -72,6 +72,13 @@ function _eventbrite_manager_field_settings_db_columns($field) {
     'views' => TRUE,
   );
   
+  $columns['status'] = array(
+    'type' => 'varchar',
+    'length' => 8,
+    'default' => '',
+    'views' => TRUE,
+    'not null' => FALSE, 
+  );
   $columns['description'] = array(
     'type' => 'text',
     'default' => '',
@@ -333,9 +340,15 @@ function _eventbrite_manager_field_presave(&$node, $field, &$items, $teaser, $pa
         continue;
       }
 
+      $new_event = NULL;
+      //------------------------------------------------------------
+      // Process and Save the Event
+      //------------------------------------------------------------
       $event = new stdClass();
       $event->title = $item['title'];
       $event->description = $item['description'];
+      $event->status = $item['status'];
+      
       $event->start_date = $item['start_date'];
       $event->end_date = $item['end_date'];
 
@@ -349,7 +362,7 @@ function _eventbrite_manager_field_presave(&$node, $field, &$items, $teaser, $pa
         $event->event_id = $item['ebid'];
           	
         // TODO: This function should return an event, which will need to be parsed (and cleaned) before save
-        if ($event = eventbrite_save('event_update', $event)) {
+        if ($new_event = eventbrite_save('event_update', $event)) {
           drupal_set_message(t('This event was successfully updated'));
           // TODO: parse and clean the event
           // TODO: update field items with values from the server, even if it doesn't matter and they won't change
@@ -367,16 +380,16 @@ function _eventbrite_manager_field_presave(&$node, $field, &$items, $teaser, $pa
       }
       else {
         // There is no ebid, which means event needs to be created
-        if ($event = eventbrite_save('event_new', $event)) {
-          drupal_set_message(t('The new event was successfully created - '.$event->id));
+        if ($new_event = eventbrite_save('event_new', $event)) {
+          drupal_set_message(t('The new event was successfully created - '.$new_event->id));
 
           // TODO: Figure out which of these calls are actually putting the variable in and remove cruft
           // TODO: parse and clean the event
           // TODO: Now that eventbrite_save returns an event object and not an event_id, all of these field
           //         items should be updated
-          $items[$delta]['ebid'] = $event->id;
+          $items[$delta]['ebid'] = $new_event->id;
           $node_field = $node->$field['field_name'];
-          $node_field[$delta]['ebid'] = $event->id;
+          $node_field[$delta]['ebid'] = $new_event->id;
           $node->$field['field_name'] = $node_field;
         }
         else {
@@ -384,6 +397,81 @@ function _eventbrite_manager_field_presave(&$node, $field, &$items, $teaser, $pa
           drupal_set_message('Could not create the event', 'error');
         }
       }
+      
+      
+      
+      
+      //------------------------------------------------------------
+      // Process and Save the Ticket
+      //------------------------------------------------------------
+      // Hopefully we won't have to do this, if there is an error with event submission then we should keep looping hte form
+      // TODO: add continue loop on event error
+      if (isset($new_event)) {
+        $ticket = new stdClass();
+
+        // Add ticket data to request
+        $ticket->name = $item['tickets'][0]['ticket_name'];
+        $ticket->quantity = $item['tickets'][0]['quantity'];
+        if (!empty($item['tickets'][0]['ticket_description'])) {
+      	  $ticket->description = $item['tickets'][0]['ticket_description'];
+        }
+        switch ($item['tickets'][0]['ticket_type']) {
+          case 'fixed':
+            $ticket->price = $item['tickets'][0]['price'];
+            $ticket->is_donation = 0;
+            break;
+      	  case 'free':
+            $ticket->price = 0.00;
+            $ticket->is_donation = 0;
+            break;
+          case 'donation':
+            $ticket->price = '';
+            $ticket->is_donation = 1;
+            break;
+        }
+
+        if (isset($item['tickets'][0]['ticket_id'])) {
+//        	drupal_set_message('wha wha?');
+          // There is a ticket id, which means that an edit/update needs to happen
+          $ticket->id = isset($item['tickets'][0]['ticket_id']);
+          	
+          if ($ticket_id = eventbrite_save('ticket_update', $ticket)) {
+            drupal_set_message(t('This ticket was successfully updated on the Eventbrite server'));
+          }
+          else {
+            // Save request could not be completed
+            // TODO: clear the ticket values--the event has now been submitted 
+            if ($errors = eventbrite_errors()) {
+              foreach ($errors as $error_type => $error_msg) {
+                drupal_set_message($error_type .': '. $error_msg, 'error');
+              }
+            }
+            drupal_set_message('Could not update the ticket', 'error');
+          }          	
+        }
+        else {
+//        	drupal_set_message('huh?');
+          // There is no ticket id, which means ticket needs to be created
+          $ticket->event_id = $new_event->id;
+        
+          if ($ticket_id = eventbrite_save('ticket_new', $ticket)) {
+            drupal_set_message(t('The new ticket was successfully created - '.$ticket_id));
+            
+            // Set ticket id in item that will be saved to DB
+            // TODO: Figure these fields out
+            $items[$delta]['tickets'][0]['ticket_id'] = $ticket_id;
+            $node_field = $node->$field['field_name'];
+            $node_field[$delta]['tickets'][0]['ticket_id'] = $ticket_id;
+            $node->$field['field_name'] = $node_field;
+            
+          }
+          else {
+            // TODO: set a form error here so that the field does not validate (rather than dsm())
+            // TODO: clear ticket values or something
+            drupal_set_message('Could not create the ticket', 'error');
+          }
+        }
+      }  
     }
   }
 }

@@ -29,7 +29,20 @@ function _eventbrite_manager_event_widget_process($element, $edit, &$form_state,
     '#weight' => -2,
     '#collapsible' => FALSE,
   );
-
+  
+  if (!empty($defaults['ebid'])) {
+  	$edit_link = l(
+  	  t('Edit this Event at Eventbrite'),
+  	  'http://www.eventbrite.com/edit?eid='.$defaults['ebid'],
+      array('attributes' => array('target' => '_blank'))
+    );
+    $element['event_details']['edit_link'] = array(
+      '#type' => 'markup',
+      '#value' => $edit_link,
+      '#weight' => -10,
+    );
+  }
+  
   $element['event_details']['title'] = array(
     '#title' => t('Event Title'),
     '#type' => 'textfield',
@@ -41,6 +54,22 @@ function _eventbrite_manager_event_widget_process($element, $edit, &$form_state,
     '#parents' => array($field_name, $delta, 'title'),
   );
 
+  // Don't show status to user on event creation, only on event edit, 
+  //   status handling will be automatic on creation
+//  if (!empty($defaults['ebid'])) {
+    $element['event_details']['status'] = array(
+      '#title' => t('Status'),
+      '#type' => 'radios',
+      '#default_value' => isset($defaults['status']) ? $defaults['status'] : 'draft',
+      '#weight' => 1,
+      '#required' => 1,
+      '#options' => array('draft' => t('Draft'), 'live' => t('Live')),
+      '#parents' => array($field_name, $delta, 'status'),
+    );
+    
+//  }
+  
+  
   $element['event_details']['description'] = array(
     '#title' => t('Event Description'),
     '#type' => 'textarea',
@@ -126,8 +155,83 @@ function _eventbrite_manager_event_widget_process($element, $edit, &$form_state,
     $element['tickets']['info'] = array(
       '#type' => 'markup',
       '#value' => 'You must create the event first before creating any tickets',
+      '#weight' => -1,
     );
   }
+  
+  // Provide info about tickets if event has not yet been created
+  if (isset($element['#value']['tickets'][0]['ticket_id'])) {
+//  	drupal_set_message('look - '.$element['#value']['tickets'][0]['ticket_id']);
+    $element['tickets']['ticket_id'] = array(
+      '#type' => 'value',
+      '#value' => $element['#value']['tickets'][0]['ticket_id'],
+      '#parents' => array($field_name, $delta, 'tickets', 0, 'ticket_id'),
+    );
+  }
+  
+  $element['tickets']['ticket_name'] = array(
+    '#title' => t('Ticket Name'),
+    '#type' => 'textfield',
+    '#default_value' => isset($element['#value']['tickets'][0]['ticket_name']) ? $element['#value']['tickets'][0]['ticket_name'] : '',
+    '#size' => 60,
+    '#maxlength' => 255,
+    '#weight' => 0,
+    '#required' => $element['#required'],
+    '#parents' => array($field_name, $delta, 'tickets', 0, 'ticket_name'),
+    '#description' => t('Examples: Member, Non-member, Student, Early Bird'),
+  );
+  
+    // Don't show status to user on event creation, only on event edit, 
+  //   status handling will be automatic on creation
+//  if (!empty($defaults['ebid'])) {
+  $element['tickets']['ticket_type'] = array(
+    '#title' => t('Ticket Type'),
+    '#type' => 'radios',
+    '#default_value' => isset($element['#value']['tickets'][0]['ticket_type']) ? $element['#value']['tickets'][0]['ticket_type'] : '',
+    '#weight' => 1,
+    '#required' => $element['#required'],
+    '#options' => array(
+      'fixed' => t('Fixed Price'),
+      'free' => t('Free'),
+      'donation' => t('Donation Format (Attendee can specify payment amount)')
+    ),
+    '#parents' => array($field_name, $delta, 'tickets', 0, 'ticket_type'),
+  );
+  
+  $element['tickets']['price'] = array(
+    '#title' => t('Price'),
+    '#type' => 'textfield',
+    '#default_value' => isset($element['#value']['tickets'][0]['price']) ? $element['#value']['tickets'][0]['price'] : '',
+    '#weight' => 2,
+    '#required' => 0,
+    '#size' => 10,
+    '#maxlength' => 6,
+  '#parents' => array($field_name, $delta, 'tickets', 0, 'price'),
+    '#description' => t('Only used for Fixed Price tickets'),
+  );
+  
+  $element['tickets']['quantity'] = array(
+    '#title' => t('Quantity Available'),
+    '#type' => 'textfield',
+    '#default_value' => isset($element['#value']['tickets'][0]['quantity']) ? $element['#value']['tickets'][0]['quantity'] : '',
+    '#weight' => 2,
+    '#required' => $element['#required'],
+    '#size' => 10,
+    '#maxlength' => 6,
+    '#parents' => array($field_name, $delta, 'tickets', 0, 'quantity'),
+  );
+  
+  
+  $element['tickets']['ticket_description'] = array(
+    '#title' => t('Ticket Description'),
+    '#type' => 'textarea',
+    '#default_value' => isset($element['#value']['tickets'][0]['ticket_description']) ? $element['#value']['tickets'][0]['ticket_description'] : '',
+      '#weight' => 5,
+    '#parents' => array($field_name, $delta, 'tickets', 0, 'ticket_description'),
+  );
+  
+  
+  
   
   // TODO: perhaps only show this chunk of the widget if the event is already created
   /* Hide capacity for now
@@ -188,6 +292,38 @@ function _eventbrite_manager_event_widget_validate(&$element, &$form_state) {
   	}
   }
 
+  // TODO: Ticket info validation
+  
+  // TODO: Ticket Name is required here
+  if (empty($form_values['tickets'][0]['ticket_name'])) {
+  	// TODO: Figure out a way for this form_set_error to be put on just the title field for this delta value
+    // TODO: add $delta value to error msg
+  	form_set_error($field_name, t('The ticket name field is required for event submission in !field_label', array('!field_label' => $field['widget']['label'])));
+  }
+  
+  // TODO: Ticket Type is required here
+  if (empty($form_values['tickets'][0]['ticket_type'])) {
+  	// TODO: Figure out a way for this form_set_error to be put on just the title field for this delta value
+    // TODO: add $delta value to error msg
+  	form_set_error($field_name, t('The ticket type field is required for event submission in !field_label', array('!field_label' => $field['widget']['label'])));
+  }
+  
+  // TODO: Ticket Quantity is required here
+  if (empty($form_values['tickets'][0]['quantity']) || !is_numeric($form_values['tickets'][0]['quantity'])) {
+  	// TODO: Figure out a way for this form_set_error to be put on just the title field for this delta value
+    // TODO: add $delta value to error msg
+  	form_set_error($field_name, t('The ticket quantity must be filled in with a numeric value in !field_label', array('!field_label' => $field['widget']['label'])));
+  }
+  
+  // TODO: Price is required here if it's fixed price
+  if ($form_values['tickets'][0]['ticket_type'] == 'fixed') {
+    if (empty($form_values['tickets'][0]['price']) || !is_numeric($form_values['tickets'][0]['price'])) {
+      // TODO: Figure out a way for this form_set_error to be put on just the title field for this delta value
+      // TODO: add $delta value to error msg
+  	  form_set_error($field_name, t('There must be a price entered for fixd price tickets in !field_label', array('!field_label' => $field['widget']['label'])));
+    }
+  }
+  
   // Date items and timezone are #required so no need here to look for them
   
   // TODO: Add in a call to date_popup_input_value (this code is from date_select_input_value
