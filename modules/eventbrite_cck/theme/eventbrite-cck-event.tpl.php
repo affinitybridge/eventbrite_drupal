@@ -22,6 +22,10 @@
   </div>
   
   <div class="eventbrite_cck-event-description">
-      <?php print($event->description);?>
+      <?php print($description);?>
+  </div>
+  
+  <div class="eventbrite_cck-event-attend">
+      <?php print($attend_link);?>
   </div>
 </div>

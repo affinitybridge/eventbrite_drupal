@@ -29,6 +29,18 @@ function eventbrite_cck_theme() {
     'eventbrite_cck_formatter_default' => $base + array(
       'arguments' => array('element' => NULL)
     ),
+    'eventbrite_cck_formatter_ticket_embed' => $base + array(
+      'arguments' => array('element' => NULL)
+    ),
+    'eventbrite_cck_formatter_registration_embed' => $base + array(
+      'arguments' => array('element' => NULL)
+    ),
+    'eventbrite_cck_formatter_countdown_embed' => $base + array(
+      'arguments' => array('element' => NULL)
+    ),
+    'eventbrite_cck_formatter_calendar_embed' => $base + array(
+      'arguments' => array('element' => NULL)
+    ),
     'eventbrite_cck_event' => $base + array(
       'arguments' => array('event' => NULL),
       'template' => 'eventbrite-cck-event'
@@ -364,6 +376,29 @@ function eventbrite_cck_field_formatter_info() {
       'field types' => array('eventbrite_cck'),
       'multiple values' => CONTENT_HANDLE_CORE,
     ),
+    // Registration embed widget from Eventbrite
+    'registration_embed' => array(
+      'label' => t('Registration Embed'),
+      'field types' => array('eventbrite_cck'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+    // Ticket embed widget from Eventbrite
+    'ticket_embed' => array(
+      'label' => t('Ticket Embed'),
+      'field types' => array('eventbrite_cck'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+    // Registration Page embed widget from Eventbrite
+    'countdown_embed' => array(
+      'label' => t('Countdown Embed'),
+      'field types' => array('eventbrite_cck'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+    // Registration Page embed widget from Eventbrite
+    'calendar_embed' => array(
+      'label' => t('Calendar Embed'),
+      'field types' => array('eventbrite_cck'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
   );
 }
-

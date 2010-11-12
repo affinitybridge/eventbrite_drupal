@@ -4,4 +4,6 @@
   border:1px solid;
   padding:1em;
   margin-bottom:1em;
+  
+  background:url("http://evbdn.eventbrite.com/s3-s3/static/images/django/logos/eb_powered.png") no-repeat right 10px;
 }
