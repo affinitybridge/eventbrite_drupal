@@ -60,6 +60,8 @@ function _eventbrite_api_event_new($event) {
   // Add event data to request
   $request->params['title'] = $event->title;
   $request->params['description'] = $event->description;
+  $request->params['status'] = $event->status;
+
   $request->params['start_date'] = $event->start_date;
   $request->params['end_date'] = $event->end_date;
   $request->params['timezone'] = $event->timezone;
@@ -88,6 +90,8 @@ function _eventbrite_api_event_update($event) {
   $request->params['event_id'] = $event->event_id;
   $request->params['title'] = $event->title;
   $request->params['description'] = $event->description;
+  $request->params['status'] = $event->status;
+  
   $request->params['start_date'] = $event->start_date;
   $request->params['end_date'] = $event->end_date;
   $request->params['timezone'] = $event->timezone;
@@ -108,5 +112,62 @@ function _eventbrite_api_event_update($event) {
     
   	return $event;
   }
+}
 
+function _eventbrite_api_ticket_new($ticket) {
+  $request = _eventbrite_common_new_request('ticket_new', 'save');
+
+  // Add ticket data to request
+  $request->params['event_id'] = $ticket->event_id;
+  $request->params['name'] = $ticket->name;
+  $request->params['quantity'] = $ticket->quantity;
+  $request->params['price'] = $ticket->price;
+  if (isset($request->params['description'])) {
+    $request->params['description'] = $ticket->description;
+  }
+  if (isset($request->params['is_donation'])) {
+    $request->params['is_donation'] = $ticket->is_donation;
+  }
+  
+  // Result will only return if no error
+  if ($result = _eventbrite_common_process_request($request)) {
+  	// Populate the event coming back and return it
+  	$xml_object = $result->object;
+
+  	// Record in watchdog
+  	$message = (string)$xml_object->message;
+  	$ticket_id = (integer)$xml_object->id;
+  	watchdog('eventbrite', "Message: %message\nEventbrite Ticket ID: %id", array('%message' => $message, '%id' => $ticket_id));
+
+    return $ticket_id;
+  }
+}
+
+function _eventbrite_api_ticket_update($ticket) {
+  $request = _eventbrite_common_new_request('ticket_update', 'save');
+
+  // Add ticket data to request
+  $request->params['id'] = $ticket->id;
+  $request->params['name'] = $ticket->name;
+  $request->params['quantity'] = $ticket->quantity;
+  $request->params['price'] = $ticket->price;
+  if (isset($request->params['description'])) {
+    $request->params['description'] = $ticket->description;
+  }
+  if (isset($request->params['is_donation'])) {
+    $request->params['is_donation'] = $ticket->is_donation;
+  }
+
+  // XML data will only come back if no error
+  if ($result = _eventbrite_common_process_request($request)) {
+  	// Populate the event coming back and return it
+  	$xml_object = $result->object;
+
+  	// Record in watchdog
+  	$message = (string)$xml_data->message;
+  	$ticket_id = (integer)$xml_object->id;
+  	watchdog('eventbrite', "Message: %message\nEventbrite Ticket ID: %id", array('%message' => $message, '%id' => $ticket_id));
+
+  	return $ticket_id;
+  }
 }
