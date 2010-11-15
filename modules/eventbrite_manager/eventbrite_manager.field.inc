@@ -15,15 +15,31 @@ function _eventbrite_manager_field_settings_form($field) {
   // define the way the value will be stored 
   // in the database.
   $form = array();
-  $form['max_length'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Maximum length'),
-    '#default_value' => is_numeric($field['max_length']) ? $field['max_length'] : 255,
-    '#required' => FALSE,
+  
+  $form['eventbrite'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Eventbrite Settings',
+  );
+  
+  $form['eventbrite']['allow_create_edit'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Event Creation and Editing'),
+    '#default_value' => $field['allow_create_edit'],
+//    '#required' => FALSE,
         
     // Use #element_validate to validate the settings.
-    '#element_validate' => array('_example_length_validate'),
-    '#description' => t('The maximum length of the field in characters. Must be a number between 1 and 255'),
+//    '#element_validate' => array('_example_length_validate'),
+    '#description' => t('Allow for events to be created and edited through this field, with changes pushed to Eventbrite'),
+  );
+  $form['eventbrite']['allow_load'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Pulling events from Eventbrite'),
+    '#default_value' => $field['allow_load'],
+//    '#required' => FALSE,
+        
+    // Use #element_validate to validate the settings.
+//    '#element_validate' => array('_example_length_validate'),
+    '#description' => t('Allow for events previously created on Eventbrite to be loaded into this field'),
   );
   return $form;
 }
@@ -48,7 +64,7 @@ function _eventbrite_manager_field_settings_save($field) {
   // and they will be available in the $field array.
   // This should match the items defined in 'form' above.
 
-  return array('max_length');
+  return array('allow_create_edit', 'allow_load');
 }
 
 function _eventbrite_manager_field_settings_db_columns($field) {
@@ -351,7 +367,7 @@ function _eventbrite_manager_field_presave(&$node, $field, &$items, $teaser, $pa
       
       $event->start_date = $item['start_date'];
       $event->end_date = $item['end_date'];
-
+//print_r($item);exit(4);
       // Calculate timezone and offset
       $start_date = date_create($item['start_date'], timezone_open($item['timezone']));
       $items[$delta]['offset'] = $offset = $start_date->getOffset() / 3600;

@@ -96,11 +96,11 @@ function eventbrite_manager_field_settings($op, $field) {
   module_load_include('inc', 'eventbrite_manager', 'eventbrite_manager.field');
   switch ($op) {
     case 'form':
-//      return _eventbrite_manager_field_settings_form($field);
+      return _eventbrite_manager_field_settings_form($field);
       break;
 
     case 'save':
-//      return _eventbrite_manager_field_settings_save($field);
+      return _eventbrite_manager_field_settings_save($field);
       break;
   	
     case 'database columns':
