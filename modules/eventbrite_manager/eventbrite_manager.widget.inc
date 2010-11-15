@@ -44,15 +44,21 @@ function _eventbrite_manager_event_widget_process($element, $edit, &$form_state,
     $options[$event_id] = $event->title;
   }
   //---------------- This chunk definitely needs to go into an api call  ^^^^^^
-  $element['load_ebid'] = array(
+  $element['load'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Load an event from Eventbrite'),
+    '#weight' => -5,
+    '#collapsible' => FALSE,
+    '#attributes' => array(
+      'class' => 'eventbrite_cck-new-load',
+    ),
+  );
+  $element['load']['load_ebid'] = array(
     '#title' => t( 'Eventbrite Event' ),
     '#type' => 'select',
     '#options' => $options,
     '#default_value' => $defaults['ebid'],
-    '#weight' => -5,
-  	  '#attributes' => array(
-  	    'class' => 'eventbrite_cck-new-load',
-  	  ),
+    '#weight' => -0,
   );
   
   
