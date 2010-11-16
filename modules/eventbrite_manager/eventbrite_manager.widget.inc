@@ -17,6 +17,9 @@ function _eventbrite_manager_event_widget_process($element, $edit, &$form_state,
   	// Field has been created before, don't show creator widget
   }
   else {
+
+  	drupal_add_js(drupal_get_path('module', 'eventbrite_manager')  .'/eventbrite_cck.js', 'module');
+
   	// Field is new, please show creator widget
   	$element['eventbrite_new'] = array(
   	  '#type' => 'radios',
