@@ -74,3 +74,4 @@ function eventbrite_timezone_offset($offset) {
   $eb_timezone .= (abs($offset) >= 10) ? abs($offset) : '0'. abs($offset);
   return $eb_timezone;
 }
+

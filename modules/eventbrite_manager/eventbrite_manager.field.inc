@@ -1,72 +1,6 @@
 <?php
 // $Id$
 
-function _eventbrite_manager_field_settings_form($field) {
-  // TODO: There will be settings that go on this form
-  //
-  // -default date stuff likely
-  //       (Maybe we will have to come up with some)  	
-    
-  // 'form' and 'save' ops may not be needed for this field
-  // 
-  // Create the form element to be used on the field 
-  // settings form. Field settings will be the same for 
-  // all shared instances of the same field and should 
-  // define the way the value will be stored 
-  // in the database.
-  $form = array();
-  
-  $form['eventbrite'] = array(
-    '#type' => 'fieldset',
-    '#title' => 'Eventbrite Settings',
-  );
-  
-  $form['eventbrite']['allow_create_edit'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Event Creation and Editing'),
-    '#default_value' => $field['allow_create_edit'],
-//    '#required' => FALSE,
-        
-    // Use #element_validate to validate the settings.
-//    '#element_validate' => array('_example_length_validate'),
-    '#description' => t('Allow for events to be created and edited through this field, with changes pushed to Eventbrite'),
-  );
-  $form['eventbrite']['allow_load'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Pulling events from Eventbrite'),
-    '#default_value' => $field['allow_load'],
-//    '#required' => FALSE,
-        
-    // Use #element_validate to validate the settings.
-//    '#element_validate' => array('_example_length_validate'),
-    '#description' => t('Allow for events previously created on Eventbrite to be loaded into this field'),
-  );
-  return $form;
-}
-
-function _eventbrite_manager_field_settings_save($field) {
-  // TODO: There will be settings that go on this form
-  //
-  // -default date stuff likely
-  //       (Maybe we will have to come up with some)  	
-    
-  // 'form' and 'save' ops may not be needed for this field
-  // 
-  // Create the form element to be used on the field 
-  // settings form. Field settings will be the same for 
-  // all shared instances of the same field and should 
-  // define the way the value will be stored 
-  // in the database.
-
-  // Return an array of the names of the field settings 
-  // defined by this module. These are the items that 
-  // CCK will store in the field definition
-  // and they will be available in the $field array.
-  // This should match the items defined in 'form' above.
-
-  return array('allow_create_edit', 'allow_load');
-}
-
 function _eventbrite_manager_field_settings_db_columns($field) {
   // Define the database storage for this field
 	
@@ -158,6 +92,76 @@ function _eventbrite_manager_field_settings_db_columns($field) {
   return $columns;
 }
 
+
+function _eventbrite_manager_field_settings_form($field) {
+  // TODO: There will be settings that go on this form
+  //
+  // -default date stuff likely
+  //       (Maybe we will have to come up with some)  	
+    
+  // 'form' and 'save' ops may not be needed for this field
+  // 
+  // Create the form element to be used on the field 
+  // settings form. Field settings will be the same for 
+  // all shared instances of the same field and should 
+  // define the way the value will be stored 
+  // in the database.
+  $form = array();
+  
+  $form['eventbrite'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Eventbrite Settings',
+  );
+  
+  $form['eventbrite']['allow_create_edit'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Event Creation and Editing'),
+    '#default_value' => $field['allow_create_edit'],
+    '#description' => t('Allow for events to be created and edited through this field, with changes pushed to Eventbrite'),
+  );
+  $form['eventbrite']['allow_load'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Pulling events from Eventbrite'),
+    '#default_value' => $field['allow_load'],
+    '#description' => t('Allow for events previously created on Eventbrite to be loaded into this field'),
+  );
+  return $form;
+}
+
+function _eventbrite_manager_field_settings_save($field) {
+  // TODO: There will be settings that go on this form
+  //
+  // -default date stuff likely
+  //       (Maybe we will have to come up with some)  	
+    
+  // 'form' and 'save' ops may not be needed for this field
+  // 
+  // Create the form element to be used on the field 
+  // settings form. Field settings will be the same for 
+  // all shared instances of the same field and should 
+  // define the way the value will be stored 
+  // in the database.
+
+  // Return an array of the names of the field settings 
+  // defined by this module. These are the items that 
+  // CCK will store in the field definition
+  // and they will be available in the $field array.
+  // This should match the items defined in 'form' above.
+
+  return array('allow_create_edit', 'allow_load');
+}
+
+function _eventbrite_manager_field_settings_validate($field) {
+  if (empty($field['allow_create_edit']) && empty($field['allow_load'])) {
+  	// TODO: Get the form error set right on this form field
+    form_set_error('allow_load', t('You must allow users to either load or create events (or both) to activate an Eventbrite field'));
+  }
+  if ($field['allow_load'] && empty($field['limit_timezones'])) {
+  	// TODO: Get the form error set right on this form field
+    form_set_error('allow_load', t('If you want to allow loading events from Eventbrite you must currently limit things to US timezones'));
+  }
+}
+
 function _eventbrite_manager_field_settings_views_data($field) {
   // TODO: Decide if any changes need to be made to the default $data array created for Views.
 
@@ -236,8 +240,8 @@ function _eventbrite_manager_field_validate(&$node, $field, &$items, $teaser, $p
 
   if (is_array($items)) {
     foreach ($items as $delta => $item) {
-      // DO validation here for the field
-          
+      // DO validation here for each field
+
       // If the field is empty just skip, wasn't filled in, that is valid
       if (eventbrite_manager_content_is_empty($item, $field)) {
         return $items;
@@ -265,7 +269,7 @@ function _eventbrite_manager_field_validate(&$node, $field, &$items, $teaser, $p
         */
       }
 
-      // TODO: Add some of this date stuff back in later if there is a need
+      // TODO: Add some date validation stuff back in later if there is a need
       /*
       // Don't try to validate if there were any errors before this point since the element won't have been munged back into a date.
       // TODO: Can probably remove the if !form_get_errors() as we're returning if there are any errors
@@ -355,68 +359,135 @@ function _eventbrite_manager_field_presave(&$node, $field, &$items, $teaser, $pa
       if (eventbrite_manager_content_is_empty($item, $field)) {
         continue;
       }
-
-      $new_event = NULL;
-      //------------------------------------------------------------
-      // Process and Save the Event
-      //------------------------------------------------------------
-      $event = new stdClass();
-      $event->title = $item['title'];
-      $event->description = $item['description'];
-      $event->status = $item['status'];
       
-      $event->start_date = $item['start_date'];
-      $event->end_date = $item['end_date'];
-//print_r($item);exit(4);
-      // Calculate timezone and offset
-      $start_date = date_create($item['start_date'], timezone_open($item['timezone']));
-      $items[$delta]['offset'] = $offset = $start_date->getOffset() / 3600;
-      $event->timezone = eventbrite_timezone_offset($items[$delta]['offset']);
-
-      if ($item['ebid']) {
-        // There is an ebid, which means that an edit/update needs to happen
-        $event->event_id = $item['ebid'];
-          	
-        // TODO: This function should return an event, which will need to be parsed (and cleaned) before save
-        if ($new_event = eventbrite_save('event_update', $event)) {
-          drupal_set_message(t('This event was successfully updated'));
-          // TODO: parse and clean the event
-          // TODO: update field items with values from the server, even if it doesn't matter and they won't change
-        }
-        else {
-          // Save request could not be completed
-          // TODO: set a form error here so that the field does not validate (rather than dsm())
-          if ($errors = eventbrite_errors()) {
-            foreach ($errors as $error_type => $error_msg) {
-              drupal_set_message($error_type .': '. $error_msg, 'error');
-            }
+      $new_event = NULL;
+      
+      // If user either has no permissions or if it's a new field and user is pulling from EB
+      if (!$field['allow_create_edit'] || $item['eventbrite_new'] == 'load') {
+      	// TODO: ops for load
+      	if ($item['load_ebid']) {
+      	  drupal_set_message('yay load ebid');
+          if ($item['ebid'] && ($item['ebid'] != $item['load_ebid'])) {
+            // User has changed this to another event!
+            // Not sure what all needs to be done in this case
+            // But probably updating the ebid somewhere now would be a good idea
           }
-          drupal_set_message('Could not update the event', 'error');
-        }          	
+
+          if ($new_event = eventbrite_get('event_get', $item['load_ebid'])) {
+          	drupal_set_message('yay we did it, should be able to save the loaded event now');
+      	    // yay new event was pulled, now we just have to stuff the values in
+//      	    print_r($new_event);exit(104);
+          }
+          else {
+            // Could not load that new event from the Eventbrite server
+            drupal_set_message('Could not load that event from the eventbrite server', 'error');
+            drupal_set_message('This field could not be updated on the eventbrite server', 'error');
+            // at this point not sure what we should do...maybe just leave the field as is
+            // if we do not explicitly change the ebid then nothing should matter
+          }
+      	}
+        else {
+       	  drupal_set_message('Error, this field should not have been validated to this point.', 'error');
+        }
       }
       else {
-        // There is no ebid, which means event needs to be created
-        if ($new_event = eventbrite_save('event_new', $event)) {
-          drupal_set_message(t('The new event was successfully created - '.$new_event->id));
+      	//TODO: ops for create/edit
+        $event = _eventbrite_cck_populate_event_from_form($item);
+        $items[$delta]['offset'] = $event->tz_offset;
 
-          // TODO: Figure out which of these calls are actually putting the variable in and remove cruft
-          // TODO: parse and clean the event
-          // TODO: Now that eventbrite_save returns an event object and not an event_id, all of these field
-          //         items should be updated
-          $items[$delta]['ebid'] = $new_event->id;
-          $node_field = $node->$field['field_name'];
-          $node_field[$delta]['ebid'] = $new_event->id;
-          $node->$field['field_name'] = $node_field;
+        // Check if there is an event_id set in event
+        if (isset($event->event_id)) {
+          // There is an ebid, which means the event needs to be updated
+          if ($new_event_id = eventbrite_save('event_update', $event)) {
+            drupal_set_message(t('This event was successfully updated on the Eventbrite server. ').$new_event_id);
+
+            
+            // TODO: merge this with load operation
+            if ($new_event = eventbrite_get('event_get', $new_event_id)) {
+          	  drupal_set_message('yay we did it, should be able to save the updated event now');
+              // yay new event was pulled, now we just have to stuff the values in
+            }
+            else {
+              // Could not load that new event from the Eventbrite server
+              drupal_set_message('Could not load that event from the eventbrite server', 'error');
+              drupal_set_message('This field could not be updated on the eventbrite server', 'error');
+              // at this point not sure what we should do...maybe just leave the field as is
+              // if we do not explicitly change the ebid then nothing should matter
+            }
+          }
+          else {
+            // Save request could not be completed
+            // TODO: set a form error here so that the field does not validate (rather than dsm())
+            // TODO: Not sure errors should be printed here at all
+            if ($errors = eventbrite_errors()) {
+              foreach ($errors as $error_type => $error_msg) {
+                drupal_set_message($error_type .': '. $error_msg, 'error');
+              }
+            }
+            drupal_set_message(t('This event could not be updated on the Eventbrite server'), 'error');
+          }          	
         }
         else {
-          // TODO: set a form error here so that the field does not validate (rather than dsm())
-          drupal_set_message('Could not create the event', 'error');
+          // There is no ebid, which means the event needs to be created
+          if ($new_event_id = eventbrite_save('event_new', $event)) {
+            drupal_set_message(t('The new event was successfully created on the Eventbrite server. ').$new_event_id);
+            
+            // TODO: Should this be here or within common code?
+            $items[$delta]['ebid'] = $new_event_id;
+            
+                        drupal_set_message('seeting items delta to '.$new_event_id);
+            // TODO: merge this with load operation
+            if ($new_event = eventbrite_get('event_get', $new_event_id)) {
+          	  drupal_set_message('yay we did it, should be able to save the created event now now');
+              // yay new event was pulled, now we just have to stuff the values in
+            }
+            else {
+              // Could not load that new event from the Eventbrite server
+              drupal_set_message('Could not load that event from the eventbrite server', 'error');
+              drupal_set_message('This field could not be updated on the eventbrite server', 'error');
+              // at this point not sure what we should do...maybe just leave the field as is
+              // if we do not explicitly change the ebid then nothing should matter
+            }
+          }
+          else {
+          	// Create request could not be completed
+            // TODO: set a form error here so that the field does not validate (rather than dsm())
+            drupal_set_message('This event could not be created on the Eventbrite server', 'error');
+          }
         }
+        
+      }
+      
+
+      if (isset($new_event)) {
+        // TODO: parse and clean the event
+        // TODO: update field items with values from the server, even if it doesn't matter and they won't change
+        // TODO: parse and clean the event
+        // TODO: Now that eventbrite_save returns an event object and not an event_id, all of these field
+        //         items should be updated
+        
+        $items[$delta]['ebid'] = $new_event->id;
+        $items[$delta]['title'] = $new_event->title;
+        $items[$delta]['status'] = $new_event->status;
+        $items[$delta]['description'] = $new_event->description;
+        $items[$delta]['start_date'] = $new_event->start_date;
+        $items[$delta]['end_date'] = $new_event->end_date;
+
+        // TODO: translate timezone value to offset, this will not do:
+        //       Time zone comes in as 'GMT-08'
+        $items[$delta]['timezone'] = $new_event->timezone;        
+        drupal_set_message('TZ from server '. $new_event->timezone);
+        // TODO: timezone and offset
       }
       
       
       
       
+      
+      
+      
+      // TODO: DOn't do any ticket processing for now
+      /*
       //------------------------------------------------------------
       // Process and Save the Ticket
       //------------------------------------------------------------
@@ -488,6 +559,33 @@ function _eventbrite_manager_field_presave(&$node, $field, &$items, $teaser, $pa
           }
         }
       }  
+      */
     }
   }
+}
+
+function _eventbrite_cck_populate_event_from_form($item) {
+  $event = new stdClass();
+  
+  if ($item['ebid']) {
+  	$event->event_id = $item['ebid'];
+  }
+  $event->title = $item['title'];
+  $event->description = $item['description'];
+  $event->status = $item['status'];
+
+  $event->start_date = $item['start_date'];
+  $event->end_date = $item['end_date'];
+  
+  // Calculate timezone and offset
+  //  $event->timezone = $item['timezone'];
+//  if ($item['ebid']) {
+//    $event->timezone = $item['timezone'];
+//  }
+//  else {
+    $start_date = date_create($item['start_date'], timezone_open($item['timezone']));
+    $event->tz_offset = $start_date->getOffset() / 3600;
+    $event->timezone = eventbrite_timezone_offset($event->tz_offset);
+    //  }
+  return $event;
 }

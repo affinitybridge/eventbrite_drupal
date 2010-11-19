@@ -1,6 +1,6 @@
 Drupal.behaviors.eventBrite = function (context) {
-  $('fieldset.eventbrite_cck-new-load').hide();
-  $('fieldset.eventbrite_cck-new-create').hide();
+//  $('fieldset.eventbrite_cck-new-load').hide();
+//  $('fieldset.eventbrite_cck-new-create').hide();
 
   $('input.eventbrite_cck-new-toggle').click(function() {
     if ($(this).attr('value') == 'load' ) {

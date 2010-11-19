@@ -103,6 +103,9 @@ function eventbrite_manager_field_settings($op, $field) {
       return _eventbrite_manager_field_settings_save($field);
       break;
   	
+    case 'validate':
+      return _eventbrite_manager_field_settings_validate($field);
+      
     case 'database columns':
       return _eventbrite_manager_field_settings_db_columns($field);
 
@@ -148,9 +151,11 @@ function eventbrite_manager_field($op, &$node, $field, &$items, $teaser, $page) 
  * from forms.
  */
 function eventbrite_manager_content_is_empty($item, $field) {
-  if (empty($item['ebid']) && empty($item['title'])) {
+  if (empty($item['ebid']) && empty($item['title']) && empty($item['load_ebid'])) {
+  	drupal_set_message('in eventbrite_manager_content_is_empty returning true');
     return TRUE;
   }
+  	drupal_set_message('in eventbrite_manager_content_is_empty returning false');
 }
 
 function eventbrite_manager_default_value(&$form, &$form_state, $field, $delta) {

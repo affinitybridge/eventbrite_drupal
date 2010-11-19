@@ -50,13 +50,14 @@ function _eventbrite_api_populate_event($event_data) {
   $event->description = (string)$event_data->description;
   $event->start_date = (string)$event_data->start_date;
   $event->end_date = (string)$event_data->end_date;
-  $event->timezone = (string)$event_data->timezone;  
+  $event->timezone = $yar = (string)$event_data->timezone;  
+
   return $event;
 }
 
 function _eventbrite_api_event_new($event) {
   $request = _eventbrite_common_new_request('event_new', 'save');
-
+drupal_set_message('into event api new');
   // Add event data to request
   $request->params['title'] = $event->title;
   $request->params['description'] = $event->description;
@@ -70,16 +71,21 @@ function _eventbrite_api_event_new($event) {
   if ($result = _eventbrite_common_process_request($request)) {
   	// Populate the event coming back and return it
   	$xml_object = $result->object;
-  	$event = _eventbrite_api_populate_event($xml_object);
+  	
+//  	print_r($result->data);exit(3);
+  	
+//  	$event = _eventbrite_api_populate_event($xml_object);
 
-  	// Record in watchdog
-  	$message = (string)$xml_object->message;
-    watchdog('eventbrite', "Message: %message\nEventbrite Event ID: %id", array('%message' => $message, '%id' => $event->id));
+    if ($event_id = (integer)$xml_object->id) {
+  	  // Record in watchdog
+  	  $message = (string)$xml_object->message;
+      watchdog('eventbrite', "Message: %message\nEventbrite Event ID: %id", array('%message' => $message, '%id' => $event_id));
 
-    // Expire the cache of event listing
-    _eventbrite_common_cache_expire('event_get', $event->id);
-    
-    return $event;
+      // Expire the cache of event listing
+      _eventbrite_common_cache_expire('user_list_events');
+          drupal_set_message('oh yeah passing otu event '.$event_id);
+      return $event_id;
+    }
   }
 }
 
@@ -100,16 +106,19 @@ function _eventbrite_api_event_update($event) {
   if ($result = _eventbrite_common_process_request($request)) {
   	// Populate the event coming back and return it
   	$xml_object = $result->object;
-  	$event = _eventbrite_api_populate_event($xml_object);
 
-  	// Record in watchdog
-  	$message = (string)$xml_data->message;
-  	watchdog('eventbrite', "Message: %message\nEventbrite Event ID: %id", array('%message' => $message, '%id' => $event->id));
+  	if ($event_id = (integer)$xml_object->id) {
+  	  // Record in watchdog
+  	  $message = (string)$xml_object->message;
+      watchdog('eventbrite', "Message: %message\nEventbrite Event ID: %id", array('%message' => $message, '%id' => $event_id));
 
-  	// Expire the cache of this event and of event listing
-    _eventbrite_common_cache_expire('event_get', $event->id);
-    _eventbrite_common_cache_expire('user_list_events');
-    
+      // Expire the cache of event listing
+      _eventbrite_common_cache_expire('event_get', $event_id);
+      _eventbrite_common_cache_expire('user_list_events');
+      
+      return $event_id;
+    }
+  	    
   	return $event;
   }
 }
