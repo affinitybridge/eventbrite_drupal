@@ -1,0 +1,10 @@
+; $Id$
+name = Eventbrite CCK
+description = This module provides a CCK field for loading, creating, and updating of Eventbrite events.
+version = "6.x-2.x-dev"
+core = 6.x
+package = Eventbrite
+
+dependencies[] = content
+dependencies[] = date_api
+dependencies[] = eventbrite

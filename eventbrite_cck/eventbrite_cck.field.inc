@@ -1,7 +1,7 @@
 <?php
 // $Id$
 
-function _eventbrite_manager_field_settings_db_columns($field) {
+function _eventbrite_cck_field_settings_db_columns($field) {
   // Define the database storage for this field
 	
   $columns['ebid'] = array(
@@ -93,7 +93,7 @@ function _eventbrite_manager_field_settings_db_columns($field) {
 }
 
 
-function _eventbrite_manager_field_settings_form($field) {
+function _eventbrite_cck_field_settings_form($field) {
   // TODO: There will be settings that go on this form
   //
   // -default date stuff likely
@@ -128,7 +128,7 @@ function _eventbrite_manager_field_settings_form($field) {
   return $form;
 }
 
-function _eventbrite_manager_field_settings_save($field) {
+function _eventbrite_cck_field_settings_save($field) {
   // TODO: There will be settings that go on this form
   //
   // -default date stuff likely
@@ -151,7 +151,7 @@ function _eventbrite_manager_field_settings_save($field) {
   return array('allow_create_edit', 'allow_load');
 }
 
-function _eventbrite_manager_field_settings_validate($field) {
+function _eventbrite_cck_field_settings_validate($field) {
   if (empty($field['allow_create_edit']) && empty($field['allow_load'])) {
   	// TODO: Get the form error set right on this form field
     form_set_error('allow_load', t('You must allow users to either load or create events (or both) to activate an Eventbrite field'));
@@ -162,7 +162,7 @@ function _eventbrite_manager_field_settings_validate($field) {
   }
 }
 
-function _eventbrite_manager_field_settings_views_data($field) {
+function _eventbrite_cck_field_settings_views_data($field) {
   // TODO: Decide if any changes need to be made to the default $data array created for Views.
 
   // Start with the $data created by CCK
@@ -203,7 +203,7 @@ function _eventbrite_manager_field_settings_views_data($field) {
 /**
  * Implementation of CCK's hook_field($op = 'load').
  */
-function _eventbrite_manager_field_load($node, $field, &$items, $teaser, $page) {
+function _eventbrite_cck_field_load($node, $field, &$items, $teaser, $page) {
   if (empty($items)) {
     return array();
   }
@@ -232,7 +232,7 @@ function _eventbrite_manager_field_load($node, $field, &$items, $teaser, $page) 
 }
 
 
-function _eventbrite_manager_field_validate(&$node, $field, &$items, $teaser, $page) {
+function _eventbrite_cck_field_validate(&$node, $field, &$items, $teaser, $page) {
   // Do validation on the field values here. The widget 
   // will do its own validation and you cannot make any 
   // assumptions about what kind of widget has been used, 
@@ -243,7 +243,7 @@ function _eventbrite_manager_field_validate(&$node, $field, &$items, $teaser, $p
       // DO validation here for each field
 
       // If the field is empty just skip, wasn't filled in, that is valid
-      if (eventbrite_manager_content_is_empty($item, $field)) {
+      if (eventbrite_cck_content_is_empty($item, $field)) {
         return $items;
       }
       if (isset($item['ebid']) && !empty($item['ebid'])) {
@@ -312,7 +312,7 @@ function _eventbrite_manager_field_validate(&$node, $field, &$items, $teaser, $p
 }
 
 // This is where you make sure that user-provided data is sanitized before being displayed.
-function _eventbrite_manager_field_sanitize(&$node, $field, &$items, $teaser, $page) {
+function _eventbrite_cck_field_sanitize(&$node, $field, &$items, $teaser, $page) {
   // Get the 'data' column stored by CCK into an array. This is necessary
   // for Views, which doesn't call the "load" $op and to fix an issue with
   // CCK double-serializing data.
@@ -352,11 +352,11 @@ function _eventbrite_manager_field_sanitize(&$node, $field, &$items, $teaser, $p
   }
 }
 
-function _eventbrite_manager_field_presave(&$node, $field, &$items, $teaser, $page) {
+function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) {
   if (is_array($items) && !empty($items)) {
     foreach ($items as $delta => $item) {
       // If the field is empty just skip, wasn't filled in, that is valid
-      if (eventbrite_manager_content_is_empty($item, $field)) {
+      if (eventbrite_cck_content_is_empty($item, $field)) {
         continue;
       }
       

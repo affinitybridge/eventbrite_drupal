@@ -8,12 +8,12 @@
 /**
  * Implementation of hook_elements().
  */
-function eventbrite_manager_elements() {
+function eventbrite_cck_elements() {
   $elements = array(
-    'eventbrite_manager_event_widget' => array(
+    'eventbrite_cck_event_widget' => array(
       '#input' => TRUE,
-      '#process' => array('eventbrite_manager_event_widget_process' ),
-      '#element_validate' => array('eventbrite_manager_event_widget_validate'),
+      '#process' => array('eventbrite_cck_event_widget_process' ),
+      '#element_validate' => array('eventbrite_cck_event_widget_validate'),
     ),
   );
 
@@ -25,15 +25,15 @@ function eventbrite_manager_elements() {
  * 
  * This hook will bring in the eventbrite_cck stylesheet
  */
-function eventbrite_manager_init() {
-  drupal_add_css(drupal_get_path('module', 'eventbrite_manager')  .'/eventbrite_manager.css');
+function eventbrite_cck_init() {
+  drupal_add_css(drupal_get_path('module', 'eventbrite_cck')  .'/eventbrite_cck.css');
 }
 
 /**
  * Implementation of hook_theme().
  */
-function eventbrite_manager_theme() {
-  $path = drupal_get_path('module', 'eventbrite_manager');
+function eventbrite_cck_theme() {
+  $path = drupal_get_path('module', 'eventbrite_cck');
   
   $base = array(
     'file' => 'theme.inc',
@@ -41,34 +41,34 @@ function eventbrite_manager_theme() {
   );
   
   return array(
-    'eventbrite_manager_formatter_default' => $base + array(
+    'eventbrite_cck_formatter_default' => $base + array(
       'arguments' => array('element' => NULL)
     ),
-    'eventbrite_manager_formatter_teaser' => $base + array(
+    'eventbrite_cck_formatter_teaser' => $base + array(
       'arguments' => array('element' => NULL)
     ),
-    'eventbrite_manager_formatter_ticket_embed' => $base + array(
+    'eventbrite_cck_formatter_ticket_embed' => $base + array(
       'arguments' => array('element' => NULL)
     ),
-    'eventbrite_manager_formatter_registration_embed' => $base + array(
+    'eventbrite_cck_formatter_registration_embed' => $base + array(
       'arguments' => array('element' => NULL)
     ),
-    'eventbrite_manager_formatter_countdown_embed' => $base + array(
+    'eventbrite_cck_formatter_countdown_embed' => $base + array(
       'arguments' => array('element' => NULL)
     ),
-    'eventbrite_manager_formatter_calendar_embed' => $base + array(
+    'eventbrite_cck_formatter_calendar_embed' => $base + array(
       'arguments' => array('element' => NULL)
     ),
-    'eventbrite_manager_event_widget' => $base + array(
+    'eventbrite_cck_event_widget' => $base + array(
       'arguments' => array('element' => NULL),
     ),
-    'eventbrite_manager_event' => $base + array(
+    'eventbrite_cck_event' => $base + array(
       'arguments' => array('event' => NULL),
-      'template' => 'eventbrite-manager-event'
+      'template' => 'eventbrite-cck-event'
     ),
-    'eventbrite_manager_event_teaser' => $base + array(
+    'eventbrite_cck_event_teaser' => $base + array(
       'arguments' => array('event' => NULL),
-      'template' => 'eventbrite-manager-event-teaser'
+      'template' => 'eventbrite-cck-event-teaser'
     ),
   );
 }
@@ -79,10 +79,10 @@ function eventbrite_manager_theme() {
 /**
  * Implementation of hook_field_info().
  */
-function eventbrite_manager_field_info() {
+function eventbrite_cck_field_info() {
   return array(
     // Defining Eventbrite Event field
-    'eventbrite_manager' => array(
+    'eventbrite_cck' => array(
       'label' => t('Eventbrite Manageable Event'),
       'description' => t('Associate a manageable Eventbrite event with a node.'),
     ),
@@ -92,25 +92,25 @@ function eventbrite_manager_field_info() {
 /**
  * Implementation of hook_field_settings().
  */
-function eventbrite_manager_field_settings($op, $field) {
-  module_load_include('inc', 'eventbrite_manager', 'eventbrite_manager.field');
+function eventbrite_cck_field_settings($op, $field) {
+  module_load_include('inc', 'eventbrite_cck', 'eventbrite_cck.field');
   switch ($op) {
     case 'form':
-      return _eventbrite_manager_field_settings_form($field);
+      return _eventbrite_cck_field_settings_form($field);
       break;
 
     case 'save':
-      return _eventbrite_manager_field_settings_save($field);
+      return _eventbrite_cck_field_settings_save($field);
       break;
   	
     case 'validate':
-      return _eventbrite_manager_field_settings_validate($field);
+      return _eventbrite_cck_field_settings_validate($field);
       
     case 'database columns':
-      return _eventbrite_manager_field_settings_db_columns($field);
+      return _eventbrite_cck_field_settings_db_columns($field);
 
     case 'views data':
-      return _eventbrite_manager_field_settings_views_data($field);
+      return _eventbrite_cck_field_settings_views_data($field);
   }
 }
 
@@ -118,20 +118,20 @@ function eventbrite_manager_field_settings($op, $field) {
 /**
  * Implementation of hook_field().
  */
-function eventbrite_manager_field($op, &$node, $field, &$items, $teaser, $page) {
-  module_load_include('inc', 'eventbrite_manager', 'eventbrite_manager.field');
+function eventbrite_cck_field($op, &$node, $field, &$items, $teaser, $page) {
+  module_load_include('inc', 'eventbrite_cck', 'eventbrite_cck.field');
   switch ($op) {
     case 'load':
-      return _eventbrite_manager_field_load($node, $field, $items, $teaser, $page);
+      return _eventbrite_cck_field_load($node, $field, $items, $teaser, $page);
 
     case 'presave':
-      return _eventbrite_manager_field_presave($node, $field, $items, $teaser, $page);
+      return _eventbrite_cck_field_presave($node, $field, $items, $teaser, $page);
 
     case 'sanitize':
-      return _eventbrite_manager_field_sanitize($node, $field, $items, $teaser, $page);
+      return _eventbrite_cck_field_sanitize($node, $field, $items, $teaser, $page);
     
     case 'validate':
-      return _eventbrite_manager_field_validate($node, $field, $items, $teaser, $page);
+      return _eventbrite_cck_field_validate($node, $field, $items, $teaser, $page);
 
   }
   
@@ -150,15 +150,15 @@ function eventbrite_manager_field($op, &$node, $field, &$items, $teaser, $page) 
  * CCK uses this to remove empty multi-value elements
  * from forms.
  */
-function eventbrite_manager_content_is_empty($item, $field) {
+function eventbrite_cck_content_is_empty($item, $field) {
   if (empty($item['ebid']) && empty($item['title']) && empty($item['load_ebid'])) {
-  	drupal_set_message('in eventbrite_manager_content_is_empty returning true');
+  	drupal_set_message('in eventbrite_cck_content_is_empty returning true');
     return TRUE;
   }
-  	drupal_set_message('in eventbrite_manager_content_is_empty returning false');
+  	drupal_set_message('in eventbrite_cck_content_is_empty returning false');
 }
 
-function eventbrite_manager_default_value(&$form, &$form_state, $field, $delta) {
+function eventbrite_cck_default_value(&$form, &$form_state, $field, $delta) {
   return array();
 }
 
@@ -169,9 +169,9 @@ function eventbrite_manager_default_value(&$form, &$form_state, $field, $delta) 
 /**
  * Implementation of hook_widget().
  */
-function eventbrite_manager_widget(&$form, &$form_state, $field, $items, $delta = 0) {
+function eventbrite_cck_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   $element = array(
-    '#type' => 'eventbrite_manager_event_widget',
+    '#type' => 'eventbrite_cck_event_widget',
     '#default_value' => isset($items[$delta]) ? $items[$delta] : array(),
   );
     
@@ -181,12 +181,12 @@ function eventbrite_manager_widget(&$form, &$form_state, $field, $items, $delta 
 /**
  * Implementation of hook_widget_info().
  */
-function eventbrite_manager_widget_info() {
+function eventbrite_cck_widget_info() {
   return array(
     // Event ID widget allows user to enter an Eventbrite event id into a textfield
-    'eventbrite_manager_event_widget' => array(
-      'label' => t('Eventbrite Manager widget'),
-      'field types' => array('eventbrite_manager'),
+    'eventbrite_cck_event_widget' => array(
+      'label' => t('Eventbrite CCK widget'),
+      'field types' => array('eventbrite_cck'),
       'multiple values' => CONTENT_HANDLE_CORE,
       'callbacks' => array(
         'default value' => CONTENT_CALLBACK_DEFAULT,
@@ -196,16 +196,16 @@ function eventbrite_manager_widget_info() {
   );
 }
 
-function eventbrite_manager_event_widget_process($element, $edit, &$form_state, $form) {
-  module_load_include('inc', 'eventbrite_manager', 'eventbrite_manager.widget');
+function eventbrite_cck_event_widget_process($element, $edit, &$form_state, $form) {
+  module_load_include('inc', 'eventbrite_cck', 'eventbrite_cck.widget');
 
-  return _eventbrite_manager_event_widget_process($element, $edit, &$form_state, $form);
+  return _eventbrite_cck_event_widget_process($element, $edit, &$form_state, $form);
 }
 
-function eventbrite_manager_event_widget_validate(&$element, &$form_state) {
-  module_load_include('inc', 'eventbrite_manager', 'eventbrite_manager.widget');
+function eventbrite_cck_event_widget_validate(&$element, &$form_state) {
+  module_load_include('inc', 'eventbrite_cck', 'eventbrite_cck.widget');
   
-  return _eventbrite_manager_event_widget_validate($element, $form_state);
+  return _eventbrite_cck_event_widget_validate($element, $form_state);
 }
 
 
@@ -215,41 +215,41 @@ function eventbrite_manager_event_widget_validate(&$element, &$form_state) {
 /**
  * Implementation of hook_field_formatter_info().
  */
-function eventbrite_manager_field_formatter_info() {
+function eventbrite_cck_field_formatter_info() {
   return array(
     // Default formatter - Event details
     'default' => array(
       'label' => t('Event details'),
-      'field types' => array('eventbrite_manager'),
+      'field types' => array('eventbrite_cck'),
       'multiple values' => CONTENT_HANDLE_CORE,
     ),
     'teaser' => array(
       'label' => t('Event teaser'),
-      'field types' => array('eventbrite_manager'),
+      'field types' => array('eventbrite_cck'),
       'multiple values' => CONTENT_HANDLE_CORE,
     ),
     // Registration embed widget from Eventbrite
     'registration_embed' => array(
       'label' => t('Registration Embed'),
-      'field types' => array('eventbrite_manager'),
+      'field types' => array('eventbrite_cck'),
       'multiple values' => CONTENT_HANDLE_CORE,
     ),
     // Ticket embed widget from Eventbrite
     'ticket_embed' => array(
       'label' => t('Ticket Embed'),
-      'field types' => array('eventbrite_manager'),
+      'field types' => array('eventbrite_cck'),
       'multiple values' => CONTENT_HANDLE_CORE,
     ),
     // Registration Page embed widget from Eventbrite
     'countdown_embed' => array(
       'label' => t('Countdown Embed'),
-      'field types' => array('eventbrite_manager'),
+      'field types' => array('eventbrite_cck'),
       'multiple values' => CONTENT_HANDLE_CORE,
     ),
     // Registration Page embed widget from Eventbrite
     'calendar_embed' => array(
       'label' => t('Calendar Embed'),
-      'field types' => array('eventbrite_manager'),
+      'field types' => array('eventbrite_cck'),
       'multiple values' => CONTENT_HANDLE_CORE,
     ),
   );

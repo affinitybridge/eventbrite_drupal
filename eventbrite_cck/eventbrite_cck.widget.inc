@@ -1,7 +1,7 @@
 <?php
 // $Id$
 
-function _eventbrite_manager_event_widget_process($element, $edit, &$form_state, $form) {
+function _eventbrite_cck_event_widget_process($element, $edit, &$form_state, $form) {
   // If #access is set and FALSE then don't show the widget
   // TODO: Verify whether or not we need this
   if (isset($element['#access']) && empty($element['#access'])) {
@@ -25,7 +25,7 @@ function _eventbrite_manager_event_widget_process($element, $edit, &$form_state,
   }
   else {
   	if ($field['allow_create_edit'] && $field['allow_load']) {
-      drupal_add_js(drupal_get_path('module', 'eventbrite_manager')  .'/eventbrite_cck.js', 'module');
+      drupal_add_js(drupal_get_path('module', 'eventbrite_cck')  .'/eventbrite_cck.js', 'module');
 
       // Field is new, please show creator widget
       $element['eventbrite_new'] = array(
@@ -98,12 +98,12 @@ function _eventbrite_manager_event_widget_process($element, $edit, &$form_state,
   }
 
   if ($field[allow_create_edit]) {
-    $element['event_details'] = _eventbrite_manager_event_widget_process_details($element, $ebid);
-    $element['when'] = _eventbrite_manager_event_widget_process_when($element);
-    $element['where'] = _eventbrite_manager_event_widget_process_where($element);
-    $element['tickets'] = _eventbrite_manager_event_widget_process_tickets($element);
-    $element['payment'] = _eventbrite_manager_event_widget_process_payment($element);
-    $element['discounts'] = _eventbrite_manager_event_widget_process_discounts($element);
+    $element['event_details'] = _eventbrite_cck_event_widget_process_details($element, $ebid);
+    $element['when'] = _eventbrite_cck_event_widget_process_when($element);
+    $element['where'] = _eventbrite_cck_event_widget_process_where($element);
+    $element['tickets'] = _eventbrite_cck_event_widget_process_tickets($element);
+    $element['payment'] = _eventbrite_cck_event_widget_process_payment($element);
+    $element['discounts'] = _eventbrite_cck_event_widget_process_discounts($element);
     
     // Hide the select box unless this form is being shown again and it was selected
     
@@ -145,7 +145,7 @@ function _eventbrite_manager_event_widget_process($element, $edit, &$form_state,
   return $element;
 }
 
-function _eventbrite_manager_event_widget_process_details($element, $ebid = '') {
+function _eventbrite_cck_event_widget_process_details($element, $ebid = '') {
   $field_name = $element['#field_name'];
   $delta = $element['#delta'];
   
@@ -209,7 +209,7 @@ function _eventbrite_manager_event_widget_process_details($element, $ebid = '') 
 
 
 
-function _eventbrite_manager_event_widget_process_when($element) {
+function _eventbrite_cck_event_widget_process_when($element) {
   $field_name = $element['#field_name'];
 	  $delta = $element['#delta'];
 //  $fieldset_name = 'when'; Not needed
@@ -249,7 +249,7 @@ function _eventbrite_manager_event_widget_process_when($element) {
     // TODO: #date_formet should not be coming from a variable, it should come from a value on field settings form
     //       Not sure how to work granularity in like this code does:
     //       '#date_format' => date_limit_format(date_input_format($element, $field), $field['granularity']),  
-    '#date_format' => variable_get('eventbrite_manager_default_date_format', 'F-d-Y h:iA'),
+    '#date_format' => variable_get('eventbrite_cck_default_date_format', 'F-d-Y h:iA'),
     // TODO: Add something about #date_timezone
 //    '#date_timezone' => $element['#date_timezone'],
     '#date_text_parts'  => array(),
@@ -301,7 +301,7 @@ function _eventbrite_manager_event_widget_process_when($element) {
   
 }
 
-function _eventbrite_manager_event_widget_process_where($element) {
+function _eventbrite_cck_event_widget_process_where($element) {
   $field_name = $element['#field_name'];
 	  $delta = $element['#delta'];
 //  $fieldset_name = 'where'; Not needed
@@ -328,7 +328,7 @@ function _eventbrite_manager_event_widget_process_where($element) {
   
 }
 
-function _eventbrite_manager_event_widget_process_tickets($element) {
+function _eventbrite_cck_event_widget_process_tickets($element) {
   $field_name = $element['#field_name'];
   $delta = $element['#delta'];
   $fieldset_name = 'tickets';
@@ -427,7 +427,7 @@ function _eventbrite_manager_event_widget_process_tickets($element) {
   return $fieldset;
 }
 
-function _eventbrite_manager_event_widget_process_discounts($element) {
+function _eventbrite_cck_event_widget_process_discounts($element) {
   $field_name = $element['#field_name'];
   $delta = $element['#delta'];
 //  $fieldset_name = 'discounts'; Not needed
@@ -454,7 +454,7 @@ function _eventbrite_manager_event_widget_process_discounts($element) {
   
 }
 
-function _eventbrite_manager_event_widget_process_payment($element) {
+function _eventbrite_cck_event_widget_process_payment($element) {
   $field_name = $element['#field_name'];
   $delta = $element['#delta'];
 //  $fieldset_name = 'discounts'; Not needed
@@ -482,7 +482,7 @@ function _eventbrite_manager_event_widget_process_payment($element) {
 }
 
 
-function _eventbrite_manager_event_widget_validate(&$element, &$form_state) {
+function _eventbrite_cck_event_widget_validate(&$element, &$form_state) {
   $field_name = $element['#field_name'];
   $delta = $element['#delta'];
 
@@ -563,7 +563,7 @@ function _eventbrite_manager_event_widget_validate(&$element, &$form_state) {
 
   //-------------------------------------------------
   // TODO: Ticket info validation
-  _eventbrite_manager_event_widget_validate_tickets($element, $form_values);
+  _eventbrite_cck_event_widget_validate_tickets($element, $form_values);
 
   //----------------------------------------------------
   // Date items and timezone are #required so no need here to look for them
@@ -590,7 +590,7 @@ function _eventbrite_manager_event_widget_validate(&$element, &$form_state) {
   
 }
 
-function _eventbrite_manager_event_widget_validate_tickets($element, $form_values) {
+function _eventbrite_cck_event_widget_validate_tickets($element, $form_values) {
   // Standard widget validate stuff
   $field_name = $element['#field_name'];
   $delta = $element['#delta'];
@@ -628,80 +628,3 @@ function _eventbrite_manager_event_widget_validate_tickets($element, $form_value
     }    
   }
 }
-
-/* THIS IS GOING
-function _eventbrite_manager_event_widget_validate_date_deprecated($element, $field, $item) {
-	  // TODO: Check out how date provides alternate error reporting:
-  // Unfortunately, due to the fact that much of the processing is already
-  // done by the time we get here, it is not possible highlight the field
-  // with an error, we just try to explain which element is creating the
-  // problem in the error message.
-  $parent = $element['#parents'];
-  $error_field = array_pop($parent);
-  $errors = array();
-
-  // TODO: Add in a call to date_popup_input_value (this coe is from date_select_input_value
-  // These are DATETIME strings (ISO dates)
-  $from_date = date_select_input_value($element['when']['start_date']);
-  $to_date = date_select_input_value($element['when']['end_date']);
-    
-  // TODO: Check for date validity--most of this is probably not needed
-  $from_field = 'start_date';
-  $to_field = 'end_date';
-  $tz_field = 'timezone';
-  $offset_field = 'offset';
-  $offset_field2 = 'offset2';
-  
-  // Convert input dates back to their UTC values and re-format to ISO
-  // or UNIX instead of the DATETIME format used in element processing.
-  $timezone = !empty($item['timezone']) ? $item['timezone'] : $element['#date_timezone'];
-  $timezone_db = date_get_timezone_db($field['tz_handling']);
-  // Not sure why timezone would be added back into the form here--doesn't make much sense
-  $item[$tz_field] = $timezone;
-
-  // Check date to make offset field
-  $from_date = date_make_date($from_date, $timezone);
-  $item[$offset_field] = date_offset_get($from_date);    
-  $to_date = date_make_date($to_date, $timezone);
-  $item[$offset_field2] = date_offset_get($to_date);
-
-  // Get test dates in this timezone, to make sure that dates are valid
-  //   (do this before changing the timezone to the db
-  $test_from = date_format($from_date, 'r');
-  $test_to = date_format($to_date, 'r');
-
-  // Put the dates back into the form as UTC?
-  // This can be skipped if timezones are set properly in the widget
-  date_timezone_set($from_date, timezone_open($timezone_db));
-  date_timezone_set($to_date, timezone_open($timezone_db));
-  $item[$from_field] = date_format($from_date, date_type_format($field['type']));
-  $item[$to_field] = date_format($to_date, date_type_format($field['type']));
-      
-  // Test a roundtrip back to the original timezone to catch
-  // invalid dates, like 2AM on the day that spring daylight savings
-  // time begins in the US.
-  date_timezone_set($from_date, timezone_open($timezone));
-  date_timezone_set($to_date, timezone_open($timezone));
-  if ($test_from != date_format($from_date, 'r')) {
-    $errors[] = t('The From date is invalid.');
-  }
-  if ($test_to != date_format($to_date, 'r')) {
-    $errors[] = t('The To date is invalid.');
-  }
-  
-  if (empty($errors)) {
-  	// TODO: Not sure why we need to copy this element back into the form
-//    form_set_value($element, $item, $form_state);
-    return;
-  }
-  else {
-    if ($field['multiple']) {
-      form_set_error($error_field, t('There are errors in @field_name value #@delta:', array('@field_name' => $field['widget']['label'], '@delta' => $delta + 1)) . theme('item_list', $errors));
-    }
-    else {
-      form_set_error($error_field, t('There are errors in @field_name:', array('@field_name' => $field['widget']['label'])) . theme('item_list', $errors));      
-    }
-  }
-
-}
-*/

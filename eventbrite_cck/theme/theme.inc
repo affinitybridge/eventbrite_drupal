@@ -3,7 +3,7 @@
 /**
  * Theme function for 'Event Manager' field widget.
  */
-function theme_eventbrite_manager_event_widget(&$element) {
+function theme_eventbrite_cck_event_widget(&$element) {
   return theme('form_element', $element, $element['#children']);
 }
 
@@ -19,13 +19,13 @@ function theme_eventbrite_manager_event_widget(&$element) {
  * $element['#delta']: the delta of this item, like '0',
  * 
  */
-function theme_eventbrite_manager_formatter_default($element) {
+function theme_eventbrite_cck_formatter_default($element) {
   // TODO: Should empty fields be coming in here for theming?
   //       Do we really need to be checking for ebid here?
 
   // Do not format this (empty) field if ebid is not set
   if ($element['#item']['ebid']) {
-    return theme('eventbrite_manager_event', $element['#item']);
+    return theme('eventbrite_cck_event', $element['#item']);
   }
 }
 
@@ -40,17 +40,17 @@ function theme_eventbrite_manager_formatter_default($element) {
  * $element['#delta']: the delta of this item, like '0',
  * 
  */
-function theme_eventbrite_manager_formatter_teaser($element) {
+function theme_eventbrite_cck_formatter_teaser($element) {
   // TODO: Should empty fields be coming in here for theming?
   //       Do we really need to be checking for ebid here?
 
   // Do not format this (empty) field if ebid is not set
   if ($element['#item']['ebid']) {
-    return theme('eventbrite_manager_event_teaser', $element['#item']);
+    return theme('eventbrite_cck_event_teaser', $element['#item']);
   }
 }
 
-function theme_eventbrite_manager_formatter_ticket_embed($element) {
+function theme_eventbrite_cck_formatter_ticket_embed($element) {
   if ($element['#item']['ebid']) {
   	$source_url = 'http://www.eventbrite.com/tickets-external?eid='. $element['#item']['ebid'] .'&ref=etckt';
   	$height = '192';
@@ -58,7 +58,7 @@ function theme_eventbrite_manager_formatter_ticket_embed($element) {
   	return $output;
   }
 }
-function theme_eventbrite_manager_formatter_registration_embed($element) {
+function theme_eventbrite_cck_formatter_registration_embed($element) {
   if ($element['#item']['ebid']) {
   	$source_url = 'http://www.eventbrite.com/event/'. $element['#item']['ebid'] .'&ref=eweb';
   	$height = '550';
@@ -66,7 +66,7 @@ function theme_eventbrite_manager_formatter_registration_embed($element) {
   	return $output;
   }
 }
-function theme_eventbrite_manager_formatter_countdown_embed($element) {
+function theme_eventbrite_cck_formatter_countdown_embed($element) {
   if ($element['#item']['ebid']) {
   	$source_url = 'http://www.eventbrite.com/countdown-widget?eid='. $element['#item']['ebid'];
   	$height = '259';
@@ -74,7 +74,7 @@ function theme_eventbrite_manager_formatter_countdown_embed($element) {
   	return $output;
   }
 }
-function theme_eventbrite_manager_formatter_calendar_embed($element) {
+function theme_eventbrite_cck_formatter_calendar_embed($element) {
   if ($element['#item']['ebid']) {
     $source_url = 'http://www.eventbrite.com/calendar-widget?eid='. $element['#item']['ebid'];
     $height = '333';
@@ -89,7 +89,7 @@ function theme_eventbrite_manager_formatter_calendar_embed($element) {
 /*
  * Preprocess call
  */
-function template_preprocess_eventbrite_manager_event(&$vars) {
+function template_preprocess_eventbrite_cck_event(&$vars) {
   $event = $vars['event'];
 
   $vars['title'] = $event['safe_title'];
