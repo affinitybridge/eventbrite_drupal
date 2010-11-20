@@ -6,7 +6,7 @@
  * Provides a function for each action in the Eventbrite API.
  */
 
-module_load_include('inc', 'eventbrite', 'includes/eventbrite.common');
+module_load_include('inc', 'eventbrite', 'eventbrite.common');
 
 /*
  * This function fetches the user's list of events from Eventbrite

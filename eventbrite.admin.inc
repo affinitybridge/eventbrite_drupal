@@ -7,7 +7,7 @@
  *   used for communication with Eventbrite server.
  */
 
-module_load_include('inc', 'eventbrite', 'includes/eventbrite.common');
+module_load_include('inc', 'eventbrite', 'eventbrite.common');
 
 /*
  * Module settings form
