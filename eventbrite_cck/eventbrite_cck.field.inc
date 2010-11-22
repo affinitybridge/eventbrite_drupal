@@ -156,10 +156,6 @@ function _eventbrite_cck_field_settings_validate($field) {
   	// TODO: Get the form error set right on this form field
     form_set_error('allow_load', t('You must allow users to either load or create events (or both) to activate an Eventbrite field'));
   }
-  if ($field['allow_load'] && empty($field['limit_timezones'])) {
-  	// TODO: Get the form error set right on this form field
-    form_set_error('allow_load', t('If you want to allow loading events from Eventbrite you must currently limit things to US timezones'));
-  }
 }
 
 function _eventbrite_cck_field_settings_views_data($field) {
@@ -247,15 +243,17 @@ function _eventbrite_cck_field_validate(&$node, $field, &$items, $teaser, $page)
         return $items;
       }
       if (isset($item['ebid']) && !empty($item['ebid'])) {
-        // EB_ID is set, that means all required field elements need to be set as well
-      	if (empty($item['title'])) {
-          form_set_error($field['field_name'], t('The title field is required'));
-          return false;
-        }
-        // description can be empty
-        if (empty($item['start_date']) || empty($item['end_date'])) {
-          form_set_error($field['field_name'], t('The date fields are required'));
-          return false;
+        // EB_ID is set, that means all required field elements need to be set as well if editing is allowed
+        if ($field['allow_create_edit']) {
+          if (empty($item['title'])) {
+            form_set_error($field['field_name'], t('The title field is required'));
+            return false;
+          }
+          // description can be empty
+          if (empty($item['start_date']) || empty($item['end_date'])) {
+            form_set_error($field['field_name'], t('The date fields are required'));
+            return false;
+          }
         }
       }
       else {

@@ -83,8 +83,8 @@ function eventbrite_cck_field_info() {
   return array(
     // Defining Eventbrite Event field
     'eventbrite_cck' => array(
-      'label' => t('Eventbrite Manageable Event'),
-      'description' => t('Associate a manageable Eventbrite event with a node.'),
+      'label' => t('Eventbrite Event'),
+      'description' => t('Attach an Eventbrite event to a node.'),
     ),
   );
 }
@@ -185,7 +185,7 @@ function eventbrite_cck_widget_info() {
   return array(
     // Event ID widget allows user to enter an Eventbrite event id into a textfield
     'eventbrite_cck_event_widget' => array(
-      'label' => t('Eventbrite CCK widget'),
+      'label' => t('Eventbrite Event'),
       'field types' => array('eventbrite_cck'),
       'multiple values' => CONTENT_HANDLE_CORE,
       'callbacks' => array(

@@ -485,7 +485,7 @@ function _eventbrite_cck_event_widget_process_payment($element) {
 function _eventbrite_cck_event_widget_validate(&$element, &$form_state) {
   $field_name = $element['#field_name'];
   $delta = $element['#delta'];
-
+drupal_set_message('ok we are in the validate hook');
   // Standard widget validate stuff
   $form_values = $form_state['values'][$field_name][$delta];
   $field = $form_state['#field_info'][$field_name];
@@ -540,7 +540,6 @@ function _eventbrite_cck_event_widget_validate(&$element, &$form_state) {
   	// That's all the validation needed for the load widget
   	return;
   }
-  
   // At this point we know there's an Eventbrite edit/create form widget
 
   // TODO: if title is empty and element is required, throw an error
