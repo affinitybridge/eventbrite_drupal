@@ -1,39 +1,45 @@
 <?php
 // $Id$
 
+/**
+ * @file
+ * CCK hook_field and hook_field_settings functions for Eventbrite CCK module
+ *
+ */
+
 function _eventbrite_cck_field_settings_db_columns($field) {
   // Define the database storage for this field
-	
+
   $columns['ebid'] = array(
-    'type' => 'int', 
-    'unsigned' => TRUE, 
-    'not null' => FALSE, 
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => FALSE,
     'default' => 0,
-    'sortable' => TRUE, 
+    'sortable' => TRUE,
     'views' => TRUE,
   );
-  
+
   $columns['title'] = array(
     'type' => 'varchar',
     'length' => 255,
-    'not null' => FALSE, 
+    'not null' => FALSE,
     'default' => '',
-    'sortable' => TRUE, 
+    'sortable' => TRUE,
     'views' => TRUE,
   );
-  
+
   $columns['status'] = array(
     'type' => 'varchar',
     'length' => 8,
     'default' => '',
     'views' => TRUE,
-    'not null' => FALSE, 
+    'not null' => FALSE,
   );
   $columns['description'] = array(
     'type' => 'text',
     'default' => '',
     'views' => TRUE,
-    'not null' => FALSE, 
+    'not null' => FALSE,
   );
 
   $columns['start_date'] = array(
@@ -57,38 +63,38 @@ function _eventbrite_cck_field_settings_db_columns($field) {
     'sortable' => FALSE,
     'views' => TRUE,
   );
-      
+
   $columns['offset'] = array(
     'type' => 'int',
     'not null' => FALSE,
     'sortable' => FALSE,
     'views' => FALSE,
   );
-      
+
   $columns['data'] = array(
-    'type' => 'text', 
-    'serialize' => TRUE, 
+    'type' => 'text',
+    'serialize' => TRUE,
     'views' => TRUE
   );
-      
+
   $columns['payment'] = array(
-    'type' => 'text', 
-    'serialize' => TRUE, 
+    'type' => 'text',
+    'serialize' => TRUE,
     'views' => TRUE
   );
 
   $columns['tickets'] = array(
-    'type' => 'text', 
-    'serialize' => TRUE, 
+    'type' => 'text',
+    'serialize' => TRUE,
     'views' => TRUE
   );
-      
+
   $columns['discounts'] = array(
-    'type' => 'text', 
-    'serialize' => TRUE, 
+    'type' => 'text',
+    'serialize' => TRUE,
     'views' => TRUE
   );
-  
+
   return $columns;
 }
 
@@ -98,12 +104,12 @@ function _eventbrite_cck_field_settings_form($field) {
   //         Maybe default date settings
 
   $form = array();
-  
+
   $form['eventbrite'] = array(
     '#type' => 'fieldset',
     '#title' => 'Eventbrite Settings',
   );
-  
+
   $form['eventbrite']['allow_create_edit'] = array(
     '#type' => 'checkbox',
     '#title' => t('Event Creation and Editing'),
@@ -125,7 +131,7 @@ function _eventbrite_cck_field_settings_save($field) {
 
 function _eventbrite_cck_field_settings_validate($field) {
   if (empty($field['allow_create_edit']) && empty($field['allow_load'])) {
-  	// TODO: Get the form error set right on this form field
+    // TODO: Get the form error set right on this form field
     form_set_error('allow_load', t('You must allow users to either load or create events (or both) to activate an Eventbrite field'));
   }
 }
@@ -137,16 +143,16 @@ function _eventbrite_cck_field_settings_views_data($field) {
   // and alter it as needed. The following
   // code illustrates how you would retrieve
   // the necessary data.
-      
+
   $data = content_views_field_views_data($field);
   $db_info = content_database_info($field);
   $table_alias = content_views_tablename($field);
 
   // Make changes to $data as needed here.
   //$field_data = $data[$table_alias][$field['field_name'] .'_ebid'];
-      
+
   // TODO: Create an eventbrite relationship - look at filefield for clues
-      
+
   /*
   // TODO: Add our special handler for serialized data. - look at filefield functions
   $data[$table_alias][$field['field_name'] .'_data']['field'] = array(
@@ -165,7 +171,7 @@ function _eventbrite_cck_field_settings_views_data($field) {
   unset($data[$table_alias][$field['field_name'] .'_data']['argument']);
   */
 
-  return $data;	
+  return $data;
 }
 
 /**
@@ -201,9 +207,9 @@ function _eventbrite_cck_field_load($node, $field, &$items, $teaser, $page) {
 
 
 function _eventbrite_cck_field_validate(&$node, $field, &$items, $teaser, $page) {
-  // Do validation on the field values here. The widget 
-  // will do its own validation and you cannot make any 
-  // assumptions about what kind of widget has been used, 
+  // Do validation on the field values here. The widget
+  // will do its own validation and you cannot make any
+  // assumptions about what kind of widget has been used,
   // so don't validate widget values, only field values.
 
   if (is_array($items)) {
@@ -219,17 +225,17 @@ function _eventbrite_cck_field_validate(&$node, $field, &$items, $teaser, $page)
         if ($field['allow_create_edit']) {
           if (empty($item['title'])) {
             form_set_error($field['field_name'], t('The title field is required'));
-            return false;
+            return FALSE;
           }
           // description can be empty
           if (empty($item['start_date']) || empty($item['end_date'])) {
             form_set_error($field['field_name'], t('The date fields are required'));
-            return false;
+            return FALSE;
           }
         }
       }
       else {
-      	/* Not sure about this one
+        /* Not sure about this one
         // EB ID is blank, that means everything else should be blank
          * Should we set an error if EB is blank and other fields have values?
         if (!empty($item['title'])) {
@@ -255,12 +261,12 @@ function _eventbrite_cck_field_sanitize(&$node, $field, &$items, $teaser, $page)
   while (!empty($items[$delta]['data']) && is_string($items[$delta]['data'])) {
     $items[$delta]['data'] = unserialize($items[$delta]['data']);
   }
-  
+
   // TODO: this should be replaced to sanitize calls to the actual field item keys.
   foreach ($items as $delta => $item) {
-  	// TODO: Should not have to test that $item is non-empty,
-  	//       empty fields should not be in sanitize data
-  	if ($item) {
+    // TODO: Should not have to test that $item is non-empty,
+    //       empty fields should not be in sanitize data
+    if ($item) {
       foreach ( $item as $col => $dat ) {
         switch ($col) {
           case 'data':
@@ -277,7 +283,7 @@ function _eventbrite_cck_field_sanitize(&$node, $field, &$items, $teaser, $page)
             }
             // TODO: maybe add some processing for serialized values
             break;
-          
+
           default:
             $items[$delta]['safe_' . $col ] = check_plain($item[ $col ]);
         }
@@ -293,21 +299,21 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
       if (eventbrite_cck_content_is_empty($item, $field)) {
         continue;
       }
-      
+
       $new_event = NULL;
-      
+
       // If user either has no permissions or if it's a new field and user is pulling from EB
       if (!$field['allow_create_edit'] || $item['eventbrite_new'] == 'load') {
-      	// TODO: ops for load
-      	if ($item['load_ebid']) {
-      	  /*
+        // TODO: ops for load
+        if ($item['load_ebid']) {
+          /*
           if ($item['ebid'] && ($item['ebid'] != $item['load_ebid'])) {
             // User has changed this to another event!
           }
           */
 
           if ($new_event = eventbrite_get('event_get', $item['load_ebid'])) {
-      	    // yay new event was pulled, now we just have to stuff the values in
+            // yay new event was pulled, now we just have to stuff the values in
           }
           else {
             // Could not load that new event from the Eventbrite server
@@ -316,13 +322,13 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
             // at this point not sure what we should do...maybe just leave the field as is
             // if we do not explicitly change the ebid then nothing should matter
           }
-      	}
+        }
         else {
-       	  drupal_set_message('Error, this field should not have been validated to this point.', 'error');
+          drupal_set_message('Error, this field should not have been validated to this point.', 'error');
         }
       }
       else {
-      	//TODO: ops for create/edit
+        //TODO: ops for create/edit
         $event = _eventbrite_cck_populate_event_from_form($item);
         $items[$delta]['offset'] = $event->tz_offset;
 
@@ -330,7 +336,7 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
         if (isset($event->event_id)) {
           // There is an ebid, which means the event needs to be updated
           if ($new_event_id = eventbrite_save('event_update', $event)) {
-            drupal_set_message(t('This event was successfully updated on the Eventbrite server. ').$new_event_id);
+            drupal_set_message(t('This event was successfully updated on the Eventbrite server. '));
 
             // TODO: merge this with load operation
             if ($new_event = eventbrite_get('event_get', $new_event_id)) {
@@ -338,8 +344,8 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
             }
             else {
               // Could not load that new event from the Eventbrite server
-              drupal_set_message('Could not load that event from the eventbrite server', 'error');
-              drupal_set_message('This field could not be updated on the eventbrite server', 'error');
+              drupal_set_message('Could not load that event from the Eventbrite server', 'error');
+              drupal_set_message('This field could not be updated on the Eventbrite server', 'error');
               // at this point not sure what we should do...maybe just leave the field as is
               // if we do not explicitly change the ebid then nothing should matter
             }
@@ -354,13 +360,13 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
               }
             }
             drupal_set_message(t('This event could not be updated on the Eventbrite server'), 'error');
-          }          	
+          }
         }
         else {
           // There is no ebid, which means the event needs to be created
           if ($new_event_id = eventbrite_save('event_new', $event)) {
-            drupal_set_message(t('The new event was successfully created on the Eventbrite server. ').$new_event_id);
-            
+            drupal_set_message(t('The new event was successfully created on the Eventbrite server. '));
+
             // TODO: merge this with load operation
             if ($new_event = eventbrite_get('event_get', $new_event_id)) {
               // yay new event was pulled, now we just have to stuff the values in
@@ -374,13 +380,13 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
             }
           }
           else {
-          	// Create request could not be completed
+            // Create request could not be completed
             // TODO: set a form error here so that the field does not validate (rather than dsm())
             drupal_set_message('This event could not be created on the Eventbrite server', 'error');
           }
         }
       }
-      
+
       if (isset($new_event)) {
         $items[$delta]['ebid'] = $new_event->id;
         $items[$delta]['title'] = $new_event->title;
@@ -392,20 +398,20 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
         // TODO: translate timezone value to offset, this will not do:
         //       Time zone comes in as 'GMT-08'
         // These decprecated timezones are now usable and will be shoved into the selectbox
-        $items[$delta]['timezone'] = $new_event->timezone;        
+        $items[$delta]['timezone'] = $new_event->timezone;
       }
-      
+
       //------------------------------------------------------------
       // Process and Save the Ticket
       //------------------------------------------------------------
       // Hopefully we won't have to do this, if there is an error with event submission then we should keep looping the form (?)
       // TODO: add continue loop on event error
       if (isset($new_event)) {
-      	// TODO: Do a check first to see if this ticket should be touched at all
-      	if ($item['tickets'][0]['ticket_toggle']) {
-          // We only need to make this API call if user has changed ticket info      	
+        // TODO: Do a check first to see if this ticket should be touched at all
+        if ($item['tickets'][0]['ticket_toggle']) {
+          // We only need to make this API call if user has changed ticket info
           $ticket = _eventbrite_cck_populate_ticket_from_form($item);
-      	
+
           // If this ticket has already been created
           if (isset($ticket->id)) {
             // There is a ticket id, which means that an edit/update needs to happen
@@ -414,22 +420,22 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
             }
             else {
               // Save request could not be completed
-              // TODO: clear the ticket values--the event has now been submitted 
+              // TODO: clear the ticket values--the event has now been submitted
               if ($errors = eventbrite_errors()) {
                 foreach ($errors as $error_type => $error_msg) {
                   drupal_set_message($error_type .': '. $error_msg, 'error');
                 }
               }
               drupal_set_message('Could not update the ticket', 'error');
-            }          	
+            }
           }
           else {
             // There is no ticket id, which means ticket needs to be created
             $ticket->event_id = $new_event->id;
-        
+
             if ($ticket_id = eventbrite_save('ticket_new', $ticket)) {
               drupal_set_message(t('The new ticket was successfully created on the Eventbrite server.'));
-            
+
               // Set ticket id in item that will be saved to DB
               // TODO: Figure these fields out
               // Other ticket fields will be autosaved in tickets
@@ -452,9 +458,9 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
 
 function _eventbrite_cck_populate_event_from_form($item) {
   $event = new stdClass();
-  
+
   if ($item['ebid']) {
-  	$event->event_id = $item['ebid'];
+    $event->event_id = $item['ebid'];
   }
   $event->title = $item['title'];
   $event->description = $item['description'];
@@ -462,7 +468,7 @@ function _eventbrite_cck_populate_event_from_form($item) {
 
   $event->start_date = $item['start_date'];
   $event->end_date = $item['end_date'];
-  
+
   // Calculate timezone and offset
   //  $event->timezone = $item['timezone'];
 //  if ($item['ebid']) {
@@ -481,7 +487,7 @@ function _eventbrite_cck_populate_ticket_from_form($item) {
 
   // Add ticket data to request
   if (isset($item['tickets'][0]['ticket_id'])) {
-  	$ticket->id = $item['tickets'][0]['ticket_id'];
+    $ticket->id = $item['tickets'][0]['ticket_id'];
   }
   $ticket->name = $item['tickets'][0]['ticket_name'];
   $ticket->quantity = $item['tickets'][0]['quantity'];

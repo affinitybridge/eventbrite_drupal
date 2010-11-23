@@ -7,8 +7,6 @@
  * Implementation of hook_install().
  */
 function eventbrite_cck_install() {
-	// TODO: is the drupal_load call needed?
-//  drupal_load('module', 'content');
   content_notify('install', 'eventbrite_cck');
 }
 
@@ -16,8 +14,6 @@ function eventbrite_cck_install() {
  * Implementation of hook_uninstall().
  */
 function eventbrite_cck_uninstall() {
-	// TODO: is the drupal_load call needed?
-	//  drupal_load('module', 'content');
   content_notify('uninstall', 'eventbrite_cck');
 }
 
@@ -27,8 +23,6 @@ function eventbrite_cck_uninstall() {
  * Notify content module when this module is enabled.
  */
 function eventbrite_cck_enable() {
-	// TODO: is the drupal_load call needed?
-	//  drupal_load('module', 'content');
   content_notify('enable', 'eventbrite_cck');
 }
 
@@ -38,7 +32,5 @@ function eventbrite_cck_enable() {
  * Notify content module when this module is disabled.
  */
 function eventbrite_cck_disable() {
-	// TODO: is the drupal_load call needed?
-	//  drupal_load('module', 'content');
   content_notify('disable', 'eventbrite_cck');
 }

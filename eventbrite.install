@@ -18,7 +18,7 @@ function eventbrite_schema() {
         'not null' => TRUE,
       ),
       'id' => array(
-        'type' => 'int', 
+        'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,

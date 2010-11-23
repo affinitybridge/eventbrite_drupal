@@ -1,6 +1,12 @@
 <?php
 // $Id$
 
+/**
+ * @file
+ * CCK hook_field and hook_field_settings functions for Eventbrite CCK module
+ *
+ */
+
 function _eventbrite_cck_event_widget_process($element, $edit, &$form_state, $form) {
   // If #access is set and FALSE then don't show the widget
   // TODO: Verify whether or not we need this
@@ -12,42 +18,42 @@ function _eventbrite_cck_event_widget_process($element, $edit, &$form_state, $fo
   $field = content_fields($field_name, $element['#type_name']);
   $delta = $element['#delta'];
   $form_values = $form_state['values'][$field_name][$delta];
-  
-  $ebid = isset($element['#default_value']['ebid']) ? $element['#default_value']['ebid'] : 0; 
-  
+
+  $ebid = isset($element['#default_value']['ebid']) ? $element['#default_value']['ebid'] : 0;
+
   $element['ebid'] = array(
     '#type' => 'value',
     '#value' => $ebid,
   );
-  
+
   // This js is needed throughout the form
   drupal_add_js(drupal_get_path('module', 'eventbrite_cck')  .'/eventbrite_cck.js', 'module');
-  
+
   if ($ebid) {
-  	// Field has been created before, don't show creator widget
+    // Field has been created before, don't show creator widget
   }
   else {
-  	if ($field['allow_create_edit'] && $field['allow_load']) {
+    if ($field['allow_create_edit'] && $field['allow_load']) {
 
       // Field is new, please show creator widget
       $element['eventbrite_new'] = array(
-  	    '#type' => 'radios',
-  	    '#title' => t('Event source'),
-  	    '#required' => $element['#required'],
-  	    '#weight' => -20,
-  	    '#options' => array(
-  	      'load' => t('Load an event already created on the Eventbrite server'),
-  	      'create' => t('Create a new event and save to Eventbrite server'),
+        '#type' => 'radios',
+        '#title' => t('Event source'),
+        '#required' => $element['#required'],
+        '#weight' => -20,
+        '#options' => array(
+          'load' => t('Load an event already created on the Eventbrite server'),
+          'create' => t('Create a new event and save to Eventbrite server'),
         ),
         '#attributes' => array(
-  	      'class' => 'eventbrite_cck-new-toggle',
-  	    ),
-  	  );
-  	}
+          'class' => 'eventbrite_cck-new-toggle',
+        ),
+      );
+    }
   }
-  
+
   if ($field['allow_load']) {
-  	if (!$ebid || !$field['allow_create_edit']) {
+    if (!$ebid || !$field['allow_create_edit']) {
       //---------------- This chunk definitely needs to go into an api call
       $events = eventbrite_get('user_list_events');
 
@@ -66,12 +72,12 @@ function _eventbrite_cck_event_widget_process($element, $edit, &$form_state, $fo
           'class' => 'eventbrite_cck-new-load',
         ),
       );
-      
+
       if ($ebid) {
         if (!empty($ebid)) {
-  	      $edit_link = l(
-  	        t('Edit this Event at Eventbrite'),
-  	        'http://www.eventbrite.com/edit?eid='.$ebid,
+          $edit_link = l(
+            t('Edit this Event at Eventbrite'),
+            'http://www.eventbrite.com/edit?eid='. $ebid,
             array('attributes' => array('target' => '_blank'))
           );
           $element['load']['edit_link'] = array(
@@ -81,7 +87,7 @@ function _eventbrite_cck_event_widget_process($element, $edit, &$form_state, $fo
           );
         }
       }
-      
+
       $element['load']['load_ebid'] = array(
         '#title' => t( 'Eventbrite Event' ),
         '#type' => 'select',
@@ -93,36 +99,35 @@ function _eventbrite_cck_event_widget_process($element, $edit, &$form_state, $fo
 
       // Hide the select box unless this form is being shown again and it was selected
       if (!$ebid && $field['allow_create_edit'] && $element['#value']['eventbrite_new'] != 'load') {
-//      if (!isset($element['#value']['eventbrite_new']) || $element['#value']['eventbrite_new'] != 'load') {
-      	$element['load']['#attributes']['style'] = 'display:none;';
-  	  }
-  	}
+        $element['load']['#attributes']['style'] = 'display:none;';
+      }
+    }
   }
 
-  if ($field[allow_create_edit]) {
+  if ($field['allow_create_edit']) {
     $element['event_details'] = _eventbrite_cck_event_widget_process_details($element, $ebid);
     $element['when'] = _eventbrite_cck_event_widget_process_when($element);
     $element['where'] = _eventbrite_cck_event_widget_process_where($element);
     $element['tickets'] = _eventbrite_cck_event_widget_process_tickets($element);
     $element['payment'] = _eventbrite_cck_event_widget_process_payment($element);
     $element['discounts'] = _eventbrite_cck_event_widget_process_discounts($element);
-    
+
     // Hide the select box unless this form is being shown again and it was selected
-    
+
     // These fields will only print if there is editing allowed.
     // If user is allowed to edit then these should never be hidden if the object has already been created
-    
+
     // Hide the fieldsets on new field creation if user is allowed to load and hasn't yet selected to create
     if (!$ebid && $field['allow_load'] && ($element['#value']['eventbrite_new'] != 'create')) {
 //    if (!isset($element['#value']['eventbrite_new']) || $element['#value']['eventbrite_new'] != 'create') {
-  	  $element['event_details']['#attributes']['style'] = 'display:none;';
-  	  $element['when']['#attributes']['style'] = 'display:none;';
-  	  $element['where']['#attributes']['style'] = 'display:none;';
+      $element['event_details']['#attributes']['style'] = 'display:none;';
+      $element['when']['#attributes']['style'] = 'display:none;';
+      $element['where']['#attributes']['style'] = 'display:none;';
       $element['tickets']['#attributes']['style'] = 'display:none;';
-  	  $element['payment']['#attributes']['style'] = 'display:none;';
+      $element['payment']['#attributes']['style'] = 'display:none;';
       $element['discounts']['#attributes']['style'] = 'display:none;';
     }
-  
+
     // TODO: perhaps only show this chunk of the widget if the event is already created
     /* Hide data & capacity for now
     $element['data'] = array(
@@ -140,7 +145,7 @@ function _eventbrite_cck_event_widget_process($element, $edit, &$form_state, $fo
     );
     */
   }
-  
+
   // Put $field into $form_state for validate() function
   $form_state['#field_info'][$field['field_name']] = $field;
 
@@ -150,7 +155,7 @@ function _eventbrite_cck_event_widget_process($element, $edit, &$form_state, $fo
 function _eventbrite_cck_event_widget_process_details($element, $ebid = '') {
   $field_name = $element['#field_name'];
   $delta = $element['#delta'];
-  
+
   $fieldset = array(
     '#type' => 'fieldset',
     '#title' => t('Event Details'),
@@ -161,11 +166,11 @@ function _eventbrite_cck_event_widget_process_details($element, $ebid = '') {
       'class' => 'eventbrite_cck-new-create',
     ),
   );
-  
+
   if (!empty($ebid)) {
-  	$edit_link = l(
-  	  t('Edit this Event at Eventbrite'),
-  	  'http://www.eventbrite.com/edit?eid='.$ebid,
+    $edit_link = l(
+      t('Edit this Event at Eventbrite'),
+      'http://www.eventbrite.com/edit?eid='. $ebid,
       array('attributes' => array('target' => '_blank'))
     );
     $fieldset['edit_link'] = array(
@@ -174,7 +179,7 @@ function _eventbrite_cck_event_widget_process_details($element, $ebid = '') {
       '#weight' => -10,
     );
   }
-  
+
   $fieldset['title'] = array(
     '#title' => t('Event Title'),
     '#type' => 'textfield',
@@ -196,7 +201,7 @@ function _eventbrite_cck_event_widget_process_details($element, $ebid = '') {
     '#options' => array('draft' => t('Draft'), 'live' => t('Live')),
     '#parents' => array($field_name, $delta, 'status'),
   );
-    
+
   $fieldset['description'] = array(
     '#title' => t('Event Description'),
     '#type' => 'textarea',
@@ -204,19 +209,16 @@ function _eventbrite_cck_event_widget_process_details($element, $ebid = '') {
     '#weight' => 1,
     '#parents' => array($field_name, $delta, 'description'),
   );
-  
+
   return $fieldset;
-  
 }
-
-
 
 function _eventbrite_cck_event_widget_process_when($element) {
   $field_name = $element['#field_name'];
-	  $delta = $element['#delta'];
+  $delta = $element['#delta'];
 //  $fieldset_name = 'when'; Not needed
   $field = content_fields($field_name, $element['#type_name']);
-  
+
   // TODO: Add configurability for default date values
   $fieldset = array(
     '#type' => 'fieldset',
@@ -228,13 +230,13 @@ function _eventbrite_cck_event_widget_process_when($element) {
       'class' => 'eventbrite_cck-new-create',
     ),
   );
-  
+
   // TODO: Add configurability for default date
   //       For now, set default event date 30 days in the future
   $default_ts = time() + (60 * 60 * 24 * 30);
   $default_datetime = date_convert($default_ts, DATE_UNIX, DATE_DATETIME);
   list($default_date) = explode(' ', $default_datetime);
-  
+
   $default_start_datetime = $default_date .' '. '18:00';
   $default_end_datetime = $default_date .' '. '21:00';
 
@@ -250,7 +252,7 @@ function _eventbrite_cck_event_widget_process_when($element) {
     '#delta'         => $delta,
     // TODO: #date_formet should not be coming from a variable, it should come from a value on field settings form
     //       Not sure how to work granularity in like this code does:
-    //       '#date_format' => date_limit_format(date_input_format($element, $field), $field['granularity']),  
+    //       '#date_format' => date_limit_format(date_input_format($element, $field), $field['granularity']),
     '#date_format' => variable_get('eventbrite_cck_default_date_format', 'F-d-Y h:iA'),
     // TODO: Add something about #date_timezone
 //    '#date_timezone' => $element['#date_timezone'],
@@ -263,29 +265,29 @@ function _eventbrite_cck_event_widget_process_when($element) {
 
   // TODO: Add support for date_popup (not just date_select)
   //    date_popup may need #date_titme field filled in on date elements- see date_elements.inc line 338
-  
+
   // This allows date elements to float on the same line
   //   Must be for date_popup as it doesn't do anything with date_select
   // $element['#date_float'] = TRUE;
-  
+
   // Populate end date with start date values
   $fieldset['end_date'] = $fieldset['start_date'];
   $fieldset['end_date']['#title'] = t('Event Ends');
   $fieldset['end_date']['#default_value'] = isset($element['#value']['end_date']) ? $element['#value']['end_date'] : $default_end_datetime;
   $fieldset['end_date']['#weight'] += .5;
   $fieldset['end_date']['#parents'] = array($field_name, $delta, 'end_date');
-  
+
   $timezone_list = date_timezone_names(TRUE);
   if (isset($element['#value']['timezone'])) {
-  	$timezone = $element['#value']['timezone'];
-  	if (!in_array($timezone, $timezone_list)) {
-  	  // If the current timezone is not in this array, add it
-  	  $timezone_list = array($timezone => $timezone) + $timezone_list;
-  	}
+    $timezone = $element['#value']['timezone'];
+    if (!in_array($timezone, $timezone_list)) {
+      // If the current timezone is not in this array, add it
+      $timezone_list = array($timezone => $timezone) + $timezone_list;
+    }
   }
   else {
-  	// TODO: check if user has a timezone, if so, use it
-  	$timezone = variable_get('date_default_timezone_name', '');  	
+    // TODO: check if user has a timezone, if so, use it
+    $timezone = variable_get('date_default_timezone_name', '');
   }
   // We do not set the type to 'date_timezone' here from the date_api module,
   //   it will overwrite Eventbrite's deprecated Olson names
@@ -294,21 +296,20 @@ function _eventbrite_cck_event_widget_process_when($element) {
     '#type' => 'select',
     '#options' => $timezone_list,
     '#weight' => 3,
-    '#default_value' => $timezone, 
-    '#required' => 1, 
+    '#default_value' => $timezone,
+    '#required' => 1,
     '#parents' => array($field_name, $delta, 'timezone'),
   );
 
   return $fieldset;
-  
 }
 
 function _eventbrite_cck_event_widget_process_where($element) {
   $field_name = $element['#field_name'];
-	  $delta = $element['#delta'];
+  $delta = $element['#delta'];
 //  $fieldset_name = 'where'; Not needed
 //  $field = content_fields($field_name, $element['#type_name']); Not needed
-  
+
   // TODO: Add configurability for default date values
   $fieldset = array(
     '#type' => 'fieldset',
@@ -320,14 +321,13 @@ function _eventbrite_cck_event_widget_process_where($element) {
       'class' => 'eventbrite_cck-new-create eventbrite_cck-where',
     ),
   );
-  
+
   $fieldset['venue_info'] = array(
     '#type' => 'item',
     '#value' => t('Venue Handling is not yet implemented'),
   );
 
   return $fieldset;
-  
 }
 
 function _eventbrite_cck_event_widget_process_tickets($element) {
@@ -335,15 +335,15 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
   $delta = $element['#delta'];
   $fieldset_name = 'tickets';
 //  $field = content_fields($field_name, $element['#type_name']); Not needed
-  
+
   if (isset($element['#value']['tickets'][0]['ticket_id'])) {
-  	$ticket_id = $element['#value']['tickets'][0]['ticket_id'];
-  	$new_ticket = FALSE;
+    $ticket_id = $element['#value']['tickets'][0]['ticket_id'];
+    $new_ticket = FALSE;
   }
   else {
     $new_ticket = TRUE;
   }
-  
+
   $fieldset = array(
     '#type' => 'fieldset',
     '#title' => t('Ticket Information'),
@@ -354,7 +354,7 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
       'class' => 'eventbrite_cck-new-create',
     ),
   );
-  
+
   // TODO: User should be able to create a draft event without creating a ticket
 
   // This checkbox will toggle and allow us to know if ticket values need to be updated
@@ -373,7 +373,7 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
     $fieldset['ticket_toggle']['#title'] = t('Create a ticket for this event.');
     $fieldset['ticket_toggle']['#description'] = t('A ticket must be created for the event to go Live');
   }
-  
+
   // Provide info about tickets if event has not yet been created
   if (isset($element['#value']['tickets'][0]['ticket_id'])) {
     $fieldset['ticket_id'] = array(
@@ -382,7 +382,7 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
       '#parents' => array($field_name, $delta, $fieldset_name, 0, 'ticket_id'),
     );
   }
-  
+
   $fieldset['ticket_name'] = array(
     '#title' => t('Ticket Name'),
     '#type' => 'textfield',
@@ -394,10 +394,10 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
     '#parents' => array($field_name, $delta, $fieldset_name, 0, 'ticket_name'),
     '#description' => t('Examples: Member, Non-member, Student, Early Bird'),
     '#attributes' => array(
-  	  'class' => 'eventbrite_cck-ticket-input',
+      'class' => 'eventbrite_cck-ticket-input',
     ),
   );
-  
+
   $fieldset['ticket_type'] = array(
     '#title' => t('Ticket Type'),
     '#type' => 'radios',
@@ -411,10 +411,10 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
     ),
     '#parents' => array($field_name, $delta, 'tickets', 0, 'ticket_type'),
     '#attributes' => array(
-  	  'class' => 'eventbrite_cck-ticket-input',
+      'class' => 'eventbrite_cck-ticket-input',
     ),
   );
-  
+
   $fieldset['price'] = array(
     '#title' => t('Price'),
     '#type' => 'textfield',
@@ -426,10 +426,10 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
     '#parents' => array($field_name, $delta, $fieldset_name, 0, 'price'),
     '#description' => t('Only used for Fixed Price tickets'),
     '#attributes' => array(
-  	  'class' => 'eventbrite_cck-ticket-input',
+      'class' => 'eventbrite_cck-ticket-input',
     ),
   );
-  
+
   $fieldset['quantity'] = array(
     '#title' => t('Quantity Available'),
     '#type' => 'textfield',
@@ -440,10 +440,10 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
     '#maxlength' => 6,
     '#parents' => array($field_name, $delta, $fieldset_name, 0, 'quantity'),
     '#attributes' => array(
-  	  'class' => 'eventbrite_cck-ticket-input',
+      'class' => 'eventbrite_cck-ticket-input',
     ),
   );
-  
+
   $fieldset['ticket_description'] = array(
     '#title' => t('Ticket Description'),
     '#type' => 'textarea',
@@ -451,10 +451,10 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
     '#weight' => 5,
     '#parents' => array($field_name, $delta, $fieldset_name, 0, 'ticket_description'),
     '#attributes' => array(
-  	  'class' => 'eventbrite_cck-ticket-input',
+      'class' => 'eventbrite_cck-ticket-input',
     ),
   );
-  
+
   return $fieldset;
 }
 
@@ -463,7 +463,7 @@ function _eventbrite_cck_event_widget_process_discounts($element) {
   $delta = $element['#delta'];
 //  $fieldset_name = 'discounts'; Not needed
 //  $field = content_fields($field_name, $element['#type_name']); Not needed
-  
+
   // TODO: Add configurability for default date values
   $fieldset = array(
     '#type' => 'fieldset',
@@ -475,13 +475,13 @@ function _eventbrite_cck_event_widget_process_discounts($element) {
       'class' => 'eventbrite_cck-new-create',
     ),
   );
-  
+
   $fieldset['discounts_info'] = array(
     '#type' => 'item',
     '#value' => t('Discount Codes are not yet implemented'),
   );
 
-  return $fieldset; 
+  return $fieldset;
 }
 
 function _eventbrite_cck_event_widget_process_payment($element) {
@@ -489,7 +489,7 @@ function _eventbrite_cck_event_widget_process_payment($element) {
   $delta = $element['#delta'];
 //  $fieldset_name = 'discounts'; Not needed
 //  $field = content_fields($field_name, $element['#type_name']); Not needed
-  
+
   // TODO: Add configurability for default date values
   $fieldset = array(
     '#type' => 'fieldset',
@@ -501,16 +501,14 @@ function _eventbrite_cck_event_widget_process_payment($element) {
       'class' => 'eventbrite_cck-new-create',
     ),
   );
-  
+
   $fieldset['payment_info'] = array(
     '#type' => 'item',
     '#value' => t('Payment Settings are not yet implemented'),
   );
 
   return $fieldset;
-  
 }
-
 
 function _eventbrite_cck_event_widget_validate(&$element, &$form_state) {
   $field_name = $element['#field_name'];
@@ -524,40 +522,40 @@ function _eventbrite_cck_event_widget_validate(&$element, &$form_state) {
   // This gets called when the field settings get saved,
   //   probably validating the widget in the default settings
   // If the whole field is empty and that's OK, stop now.
-  if (empty($element['#post'][$field_name]) && !$element['#required']) {  	
+  if (empty($element['#post'][$field_name]) && !$element['#required']) {
 //  	drupal_set_message('Empty widget validated in field settings');
     return;
   }
 
   // Get ebid if there is one already set to the field
   $ebid = $element['ebid']['#value'];
-   
+
   // If there has not been an event created and the source widget has not even been selected
   if (!$ebid && !isset($form_values['eventbrite_new'])) {
-  	// There is no event here, the field is empty
-  	if ($element['#required']) {
+    // There is no event here, the field is empty
+    if ($element['#required']) {
       // Throw an error if the field is required
-  	  form_set_error($field_name, t('Event information is required for !field_label', array('!field_label' => $field['widget']['label'])));
-  	}
-  	// No need to keep validating empty field
-  	return;
+      form_set_error($field_name, t('Event information is required for !field_label', array('!field_label' => $field['widget']['label'])));
+    }
+    // No need to keep validating empty field
+    return;
   }
-  
+
   // Validate the select box load widget if that's what's being used for this field
   //   Either the field is to be populated from Eventbrite, or edit/create is not allowed
   if ($form_values['eventbrite_new'] == 'load' || !$field['allow_create_edit']) {
-  	// TODO: if load_ebid is empty and element is required, throw an error
-  	if (empty($form_values['load_ebid'])) {
-  	  if ($element['#required'] || $ebid) {
+    // TODO: if load_ebid is empty and element is required, throw an error
+    if (empty($form_values['load_ebid'])) {
+      if ($element['#required'] || $ebid) {
         form_set_error($field_name, t('The Event select field is required for event submission in !field_label', array('!field_label' => $field['widget']['label'])));
-  	  }
-  	  // TODO: Think about how the field could be emptied
-  	  // If there's no load_ebid then this event is empty (and there are no more fields)
-  	  return;
-  	}
-  	if ($form_values['load_ebid'] != $ebid) {
-  	  // Eventbrite ID has changed, or is new, so we'll need to verify the ebid with the server.
-  	  if (!eventbrite_get('event_get', $form_values['load_ebid'])) {
+      }
+      // TODO: Think about how the field could be emptied
+      // If there's no load_ebid then this event is empty (and there are no more fields)
+      return;
+    }
+    if ($form_values['load_ebid'] != $ebid) {
+      // Eventbrite ID has changed, or is new, so we'll need to verify the ebid with the server.
+      if (!eventbrite_get('event_get', $form_values['load_ebid'])) {
         form_set_error(
           $field_name,
           t(
@@ -565,10 +563,10 @@ function _eventbrite_cck_event_widget_validate(&$element, &$form_state) {
             array('%ebid' => $form_values['load_ebid'], '%field' => $ftitle)
           )
         );
-  	  }
-  	}
-  	// That's all the validation needed for the load widget
-  	return;
+      }
+    }
+    // That's all the validation needed for the load widget
+    return;
   }
   // At this point we know there's an Eventbrite edit/create form widget
 
@@ -577,10 +575,10 @@ function _eventbrite_cck_event_widget_validate(&$element, &$form_state) {
     if ($element['#required'] || $ebid) {
       form_set_error($field_name, t('The title field is required for event submission in !field_label', array('!field_label' => $field['widget']['label'])));
     }
-  	// If there's no title then this event is empty, don't bother validating the rest of the fields
-  	return;
+    // If there's no title then this event is empty, don't bother validating the rest of the fields
+    return;
   }
-  
+
   /* Not sure when this one will come back
   // TODO: Set this to an automatic is_numeric handler
   if (!empty($element['data']['capacity']['#value'])) {
@@ -595,12 +593,12 @@ function _eventbrite_cck_event_widget_validate(&$element, &$form_state) {
   _eventbrite_cck_event_widget_validate_tickets($element, $form_values);
   //----------------------------------------------------
   // Date items and timezone are #required so no need here to look for them
-  
+
   // TODO: Add in a call to date_popup_input_value (this code is from date_select_input_value
   // These are DATETIME strings (ISO dates)
 //  $start_date = date_select_input_value($element['when']['start_date']);
 //  $end_date = date_select_input_value($element['when']['end_date']);
-  
+
   if ($form_values['start_date'] > $form_values['end_date']) {
     // TODO: add $delta value to error msg
     form_set_error($field_name, t('The end date field must be greater than the start date field in !field_label', array('!field_label' => $field['widget']['label'])));
@@ -610,9 +608,8 @@ function _eventbrite_cck_event_widget_validate(&$element, &$form_state) {
   // because otherwise we'll show errors on the nested elements
   // more than once. (?)
   if (form_get_errors()) {
-  	return;
+    return;
   }
-  
 }
 
 function _eventbrite_cck_event_widget_validate_tickets($element, $form_values) {
@@ -622,39 +619,39 @@ function _eventbrite_cck_event_widget_validate_tickets($element, $form_values) {
   $field = $form_state['#field_info'][$field_name];
 
   foreach ($form_values['tickets'] as $index => $ticket) {
-  	if ($form_values['status'] == 'live' && !$ticket['ticket_toggle']) {
-  	  form_set_error($field_name, t('You must create a ticket for this event if you want it to be Live in !field_label', array('!field_label' => $field['widget']['label'])));
-   	} 
-  	if ($ticket['ticket_toggle']) {
+    if ($form_values['status'] == 'live' && !$ticket['ticket_toggle']) {
+      form_set_error($field_name, t('You must create a ticket for this event if you want it to be Live in !field_label', array('!field_label' => $field['widget']['label'])));
+    }
+    if ($ticket['ticket_toggle']) {
       // TODO: Ticket Name is required here
       if (empty($ticket['ticket_name'])) {
-  	    // TODO: Figure out a way for this form_set_error to be put on just the title field for this delta value
+        // TODO: Figure out a way for this form_set_error to be put on just the title field for this delta value
         // TODO: add $delta value and $index to error msg
-  	    form_set_error($field_name, t('The ticket name field is required for event submission in !field_label', array('!field_label' => $field['widget']['label'])));
+        form_set_error($field_name, t('The ticket name field is required for event submission in !field_label', array('!field_label' => $field['widget']['label'])));
       }
-    
+
       // TODO: Ticket Type is required here
       if (empty($ticket['ticket_type'])) {
-    	// TODO: Figure out a way for this form_set_error to be put on just the title field for this delta value
+        // TODO: Figure out a way for this form_set_error to be put on just the title field for this delta value
         // TODO: add $delta value to error msg
-  	    form_set_error($field_name, t('The ticket type field is required for event submission in !field_label', array('!field_label' => $field['widget']['label'])));
+        form_set_error($field_name, t('The ticket type field is required for event submission in !field_label', array('!field_label' => $field['widget']['label'])));
       }
-    
+
       // TODO: Ticket Quantity is required here
       if (empty($ticket['quantity']) || !is_numeric($ticket['quantity'])) {
-  	    // TODO: Figure out a way for this form_set_error to be put on just the title field for this delta value
+        // TODO: Figure out a way for this form_set_error to be put on just the title field for this delta value
         // TODO: add $delta value to error msg
-  	    form_set_error($field_name, t('The ticket quantity must be filled in with a numeric value in !field_label', array('!field_label' => $field['widget']['label'])));
+        form_set_error($field_name, t('The ticket quantity must be filled in with a numeric value in !field_label', array('!field_label' => $field['widget']['label'])));
       }
-  
+
       // TODO: Price is required here if it's fixed price
       if ($ticket['ticket_type'] == 'fixed') {
         if (empty($ticket['price']) || !is_numeric($ticket['price'])) {
           // TODO: Figure out a way for this form_set_error to be put on just the title field for this delta value
           // TODO: add $delta value to error msg
-  	      form_set_error($field_name, t('There must be a price entered for fixd price tickets in !field_label', array('!field_label' => $field['widget']['label'])));
+          form_set_error($field_name, t('There must be a price entered for fixd price tickets in !field_label', array('!field_label' => $field['widget']['label'])));
         }
-      } 
+      }
     }
   }
 }

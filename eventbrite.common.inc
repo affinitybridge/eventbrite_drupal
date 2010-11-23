@@ -69,34 +69,34 @@ function _eventbrite_common_process_request($request) {
       }
     }
   }
-  
+
   // Send HTTP request to the server - since we don't have fresh data
   if ($result = drupal_http_request(EVENTBRITE_SERVER . $request->op .'?'. $request->query_string) ) {
     // Process the result if there was one, and return simplexml_load_string($result->data)
     if (_eventbrite_common_process_result($result)) {
       $result->source = 'server';
-      
+
       // If this was a get operation then cache the results
       if ($request->op_type == 'get' && $request->allowed_cache) {
-      	if (isset($cached_result)) {
-      	  // There was already a cached result, so we'll need to update the cache
-      	  if (strcmp($cached_result->result, $result->data)) {
-      	  	// XML data returned has been updated, flag it so that other modules can refresh data
-      	  	$result->updated = TRUE;
-      	  }
-      	  else {
-      	  	// XML data returned is the same, just update the timestamp
-      	  	$result->updated = FALSE;
-      	  }
-      	  // Same update call whether result from server has changed or not
+        if (isset($cached_result)) {
+          // There was already a cached result, so we'll need to update the cache
+          if (strcmp($cached_result->result, $result->data)) {
+            // XML data returned has been updated, flag it so that other modules can refresh data
+            $result->updated = TRUE;
+          }
+          else {
+            // XML data returned is the same, just update the timestamp
+            $result->updated = FALSE;
+          }
+          // Same update call whether result from server has changed or not
           _eventbrite_common_cache_result($result->data, $request, 'update');
-      	}
-      	else {
-      	  // There was no cached result, so we'll need to insert into the cache
-      	  // And flag the data as new for other modules to save it
-      	  $result->updated = TRUE;
+        }
+        else {
+          // There was no cached result, so we'll need to insert into the cache
+          // And flag the data as new for other modules to save it
+          $result->updated = TRUE;
           _eventbrite_common_cache_result($result->data, $request, 'insert');
-      	}
+        }
       }
 
       return $result;
@@ -117,7 +117,7 @@ function _eventbrite_common_process_result(&$result) {
 
         // If error type is set, log to watchdog
         if (isset($xml_object->error_message)) {
-      	  $result->success = FALSE;
+          $result->success = FALSE;
           // TODO: $request->op should be added to watchdog message
           // Also check for other error keys
           $watchdog_message = t('Error type: !error_type', array('!error_type' => $xml_object->error_type)) ."\n";
@@ -128,7 +128,7 @@ function _eventbrite_common_process_result(&$result) {
           eventbrite_errors(t((string)$xml_object->error_message), (string)$xml_object->error_type);
           return;
         }
-        
+
         $result->success = TRUE;
         return TRUE;
 

@@ -1,4 +1,11 @@
-<?php 
+<?php
+// $Id$
+
+/**
+ * @file
+ * Theme functions for Eventbrite CCK module
+ *
+ */
 
 /**
  * Theme function for 'Event Manager' field widget.
@@ -10,14 +17,14 @@ function theme_eventbrite_cck_event_widget(&$element) {
 
 /**
  * Theme function for 'default' example field formatter.
- * 
+ *
  * $element['#item']: the sanitized $delta value for the item,
  * $element['#field_name']: the field name,
  * $element['#type_name']: the $node->type,
  * $element['#formatter']: the $formatter_name,
  * $element'#node']: the $node,
  * $element['#delta']: the delta of this item, like '0',
- * 
+ *
  */
 function theme_eventbrite_cck_formatter_default($element) {
   // TODO: Should empty fields be coming in here for theming?
@@ -31,14 +38,14 @@ function theme_eventbrite_cck_formatter_default($element) {
 
 /**
  * Theme function for 'default' example field formatter.
- * 
+ *
  * $element['#item']: the sanitized $delta value for the item,
  * $element['#field_name']: the field name,
  * $element['#type_name']: the $node->type,
  * $element['#formatter']: the $formatter_name,
  * $element'#node']: the $node,
  * $element['#delta']: the delta of this item, like '0',
- * 
+ *
  */
 function theme_eventbrite_cck_formatter_teaser($element) {
   // TODO: Should empty fields be coming in here for theming?
@@ -52,26 +59,26 @@ function theme_eventbrite_cck_formatter_teaser($element) {
 
 function theme_eventbrite_cck_formatter_ticket_embed($element) {
   if ($element['#item']['ebid']) {
-  	$source_url = 'http://www.eventbrite.com/tickets-external?eid='. $element['#item']['ebid'] .'&ref=etckt';
-  	$height = '192';
-  	$output .= '<div style="width:100%; text-align:left;"><iframe  src="'. $source_url .'" frameborder="0" height="'. $height .'" width="100%" vspace="0" hspace="0" marginheight="5" marginwidth="5" scrolling="auto" allowtransparency="true"></iframe></div>';
-  	return $output;
+    $source_url = 'http://www.eventbrite.com/tickets-external?eid='. $element['#item']['ebid'] .'&ref=etckt';
+    $height = '192';
+    $output .= '<div style="width:100%; text-align:left;"><iframe  src="'. $source_url .'" frameborder="0" height="'. $height .'" width="100%" vspace="0" hspace="0" marginheight="5" marginwidth="5" scrolling="auto" allowtransparency="true"></iframe></div>';
+    return $output;
   }
 }
 function theme_eventbrite_cck_formatter_registration_embed($element) {
   if ($element['#item']['ebid']) {
-  	$source_url = 'http://www.eventbrite.com/event/'. $element['#item']['ebid'] .'&ref=eweb';
-  	$height = '550';
-  	$output .= '<div style="width:100%; text-align:left;"><iframe  src="'. $source_url .'" frameborder="0" height="'. $height .'" width="100%" vspace="0" hspace="0" marginheight="5" marginwidth="5" scrolling="auto" allowtransparency="true"></iframe></div>';
-  	return $output;
+    $source_url = 'http://www.eventbrite.com/event/'. $element['#item']['ebid'] .'&ref=eweb';
+    $height = '550';
+    $output .= '<div style="width:100%; text-align:left;"><iframe  src="'. $source_url .'" frameborder="0" height="'. $height .'" width="100%" vspace="0" hspace="0" marginheight="5" marginwidth="5" scrolling="auto" allowtransparency="true"></iframe></div>';
+    return $output;
   }
 }
 function theme_eventbrite_cck_formatter_countdown_embed($element) {
   if ($element['#item']['ebid']) {
-  	$source_url = 'http://www.eventbrite.com/countdown-widget?eid='. $element['#item']['ebid'];
-  	$height = '259';
-  	$output .= '<div style="width:100%; text-align:left;"><iframe  src="'. $source_url .'" frameborder="0" height="'. $height .'" marginheight="0" marginwidth="0" scrolling="no"></iframe></div>';
-  	return $output;
+    $source_url = 'http://www.eventbrite.com/countdown-widget?eid='. $element['#item']['ebid'];
+    $height = '259';
+    $output .= '<div style="width:100%; text-align:left;"><iframe  src="'. $source_url .'" frameborder="0" height="'. $height .'" marginheight="0" marginwidth="0" scrolling="no"></iframe></div>';
+    return $output;
   }
 }
 function theme_eventbrite_cck_formatter_calendar_embed($element) {
@@ -82,9 +89,6 @@ function theme_eventbrite_cck_formatter_calendar_embed($element) {
     return $output;
   }
 }
-
-
-
 
 /*
  * Preprocess call
@@ -105,11 +109,7 @@ function template_preprocess_eventbrite_cck_event(&$vars) {
 
   $vars['attend_link'] = l(
     t('Attend this Event'),
-    'http://www.eventbrite.com/event/'. $event['safe_ebid'] .'?ref=elink', 
+    'http://www.eventbrite.com/event/'. $event['safe_ebid'] .'?ref=elink',
     array('attributes' => array('target' => '_blank'))
   );
-
 }
-
-
-?>

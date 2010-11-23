@@ -29,7 +29,7 @@ function eventbrite_admin_settings() {
     '#default_value' => variable_get('eventbrite_user_key', ''),
     '#description' => t('Your user key for secure authentication. You can find it by <a href="http://www.eventbrite.com/userkeyapi" target="_blank">clicking here</a>'),
   );
-  
+
   $form['eventbrite_cache_minimum'] = array(
     '#type' => 'textfield',
     '#title' => 'Minimum Cache Lifetime',
@@ -38,7 +38,7 @@ function eventbrite_admin_settings() {
     // TODO: Provide better descriptions for min and max time
     '#description' => t('The minimum amount of time, in minutes, to cache results from the Eventbrite server.'),
   );
-  
+
   $form['eventbrite_cache_maximum'] = array(
     '#type' => 'textfield',
     '#title' => 'Maximum Cache Lifetime',
@@ -47,7 +47,7 @@ function eventbrite_admin_settings() {
     // TODO: Provide better descriptions for min and max time
     '#description' => t('The maximum amount of time, in minutes, to cache results from the Eventbrite server.'),
   );
-  
+
   return system_settings_form($form);
 }
 

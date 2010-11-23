@@ -7,7 +7,7 @@
  *
  * $event
  *   The event object which contains all event fields.
- * 
+ *
  */
 ?>
 <hr><hr>
@@ -17,11 +17,11 @@
       <?php print($title);?>
     </h3>
   </div>
-  
+
   <div class="eventbrite-cck-event-date">
       <?php print $date_range;?>
   </div>
-  
+
   <div class="eventbrite-cck-event-description">
       <?php print($description);?>
   </div>
@@ -30,4 +30,3 @@
       <?php print($attend_link);?>
   </div>
 </div>
-  

@@ -22,7 +22,7 @@ function eventbrite_cck_elements() {
 
 /**
  * Implementation of hook_init().
- * 
+ *
  * This hook will bring in the eventbrite_cck stylesheet
  */
 function eventbrite_cck_init() {
@@ -34,12 +34,12 @@ function eventbrite_cck_init() {
  */
 function eventbrite_cck_theme() {
   $path = drupal_get_path('module', 'eventbrite_cck');
-  
+
   $base = array(
     'file' => 'theme.inc',
     'path' => "$path/theme",
   );
-  
+
   return array(
     'eventbrite_cck_formatter_default' => $base + array(
       'arguments' => array('element' => NULL)
@@ -102,10 +102,10 @@ function eventbrite_cck_field_settings($op, $field) {
     case 'save':
       return _eventbrite_cck_field_settings_save($field);
       break;
-  	
+
     case 'validate':
       return _eventbrite_cck_field_settings_validate($field);
-      
+
     case 'database columns':
       return _eventbrite_cck_field_settings_db_columns($field);
 
@@ -129,12 +129,11 @@ function eventbrite_cck_field($op, &$node, $field, &$items, $teaser, $page) {
 
     case 'sanitize':
       return _eventbrite_cck_field_sanitize($node, $field, $items, $teaser, $page);
-    
+
     case 'validate':
       return _eventbrite_cck_field_validate($node, $field, $items, $teaser, $page);
-
   }
-  
+
   return $items;
 }
 
@@ -143,7 +142,7 @@ function eventbrite_cck_field($op, &$node, $field, &$items, $teaser, $page) {
 
 /**
  * Implementation of hook_content_is_empty().
- * 
+ *
  * CCK has no way to know if something like a zero is
  * an empty value or a valid value, so return
  * TRUE or FALSE to a populated field $item array.
@@ -172,7 +171,7 @@ function eventbrite_cck_widget(&$form, &$form_state, $field, $items, $delta = 0)
     '#type' => 'eventbrite_cck_event_widget',
     '#default_value' => isset($items[$delta]) ? $items[$delta] : array(),
   );
-    
+
   return $element;
 }
 
@@ -202,7 +201,7 @@ function eventbrite_cck_event_widget_process($element, $edit, &$form_state, $for
 
 function eventbrite_cck_event_widget_validate(&$element, &$form_state) {
   module_load_include('inc', 'eventbrite_cck', 'eventbrite_cck.widget');
-  
+
   return _eventbrite_cck_event_widget_validate($element, $form_state);
 }
 
