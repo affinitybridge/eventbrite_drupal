@@ -364,17 +364,14 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
       if (!$field['allow_create_edit'] || $item['eventbrite_new'] == 'load') {
       	// TODO: ops for load
       	if ($item['load_ebid']) {
-      	  drupal_set_message('yay load ebid');
+      	  /*
           if ($item['ebid'] && ($item['ebid'] != $item['load_ebid'])) {
             // User has changed this to another event!
-            // Not sure what all needs to be done in this case
-            // But probably updating the ebid somewhere now would be a good idea
           }
+          */
 
           if ($new_event = eventbrite_get('event_get', $item['load_ebid'])) {
-          	drupal_set_message('yay we did it, should be able to save the loaded event now');
       	    // yay new event was pulled, now we just have to stuff the values in
-//      	    print_r($new_event);exit(104);
           }
           else {
             // Could not load that new event from the Eventbrite server
@@ -399,10 +396,8 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
           if ($new_event_id = eventbrite_save('event_update', $event)) {
             drupal_set_message(t('This event was successfully updated on the Eventbrite server. ').$new_event_id);
 
-            
             // TODO: merge this with load operation
             if ($new_event = eventbrite_get('event_get', $new_event_id)) {
-          	  drupal_set_message('yay we did it, should be able to save the updated event now');
               // yay new event was pulled, now we just have to stuff the values in
             }
             else {
@@ -430,13 +425,8 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
           if ($new_event_id = eventbrite_save('event_new', $event)) {
             drupal_set_message(t('The new event was successfully created on the Eventbrite server. ').$new_event_id);
             
-            // TODO: Should this be here or within common code?
-            $items[$delta]['ebid'] = $new_event_id;
-            
-                        drupal_set_message('seeting items delta to '.$new_event_id);
             // TODO: merge this with load operation
             if ($new_event = eventbrite_get('event_get', $new_event_id)) {
-          	  drupal_set_message('yay we did it, should be able to save the created event now now');
               // yay new event was pulled, now we just have to stuff the values in
             }
             else {
@@ -453,17 +443,9 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
             drupal_set_message('This event could not be created on the Eventbrite server', 'error');
           }
         }
-        
       }
       
-
       if (isset($new_event)) {
-        // TODO: parse and clean the event
-        // TODO: update field items with values from the server, even if it doesn't matter and they won't change
-        // TODO: parse and clean the event
-        // TODO: Now that eventbrite_save returns an event object and not an event_id, all of these field
-        //         items should be updated
-        
         $items[$delta]['ebid'] = $new_event->id;
         $items[$delta]['title'] = $new_event->title;
         $items[$delta]['status'] = $new_event->status;
@@ -473,91 +455,61 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
 
         // TODO: translate timezone value to offset, this will not do:
         //       Time zone comes in as 'GMT-08'
+        // These decprecated timezones are now usable and will be shoved into the selectbox
         $items[$delta]['timezone'] = $new_event->timezone;        
-        drupal_set_message('TZ from server '. $new_event->timezone);
-        // TODO: timezone and offset
       }
       
-      
-      
-      
-      
-      
-      
-      // TODO: DOn't do any ticket processing for now
-      /*
       //------------------------------------------------------------
       // Process and Save the Ticket
       //------------------------------------------------------------
-      // Hopefully we won't have to do this, if there is an error with event submission then we should keep looping hte form
+      // Hopefully we won't have to do this, if there is an error with event submission then we should keep looping the form (?)
       // TODO: add continue loop on event error
       if (isset($new_event)) {
-        $ticket = new stdClass();
-
-        // Add ticket data to request
-        $ticket->name = $item['tickets'][0]['ticket_name'];
-        $ticket->quantity = $item['tickets'][0]['quantity'];
-        if (!empty($item['tickets'][0]['ticket_description'])) {
-      	  $ticket->description = $item['tickets'][0]['ticket_description'];
-        }
-        switch ($item['tickets'][0]['ticket_type']) {
-          case 'fixed':
-            $ticket->price = $item['tickets'][0]['price'];
-            $ticket->is_donation = 0;
-            break;
-      	  case 'free':
-            $ticket->price = 0.00;
-            $ticket->is_donation = 0;
-            break;
-          case 'donation':
-            $ticket->price = '';
-            $ticket->is_donation = 1;
-            break;
-        }
-
-        if (isset($item['tickets'][0]['ticket_id'])) {
-//        	drupal_set_message('wha wha?');
-          // There is a ticket id, which means that an edit/update needs to happen
-          $ticket->id = isset($item['tickets'][0]['ticket_id']);
-          	
-          if ($ticket_id = eventbrite_save('ticket_update', $ticket)) {
-            drupal_set_message(t('This ticket was successfully updated on the Eventbrite server'));
-          }
-          else {
-            // Save request could not be completed
-            // TODO: clear the ticket values--the event has now been submitted 
-            if ($errors = eventbrite_errors()) {
-              foreach ($errors as $error_type => $error_msg) {
-                drupal_set_message($error_type .': '. $error_msg, 'error');
-              }
+      	// TODO: Do a check first to see if this ticket should be touched at all
+      	if ($item['tickets'][0]['ticket_toggle']) {
+          // We only need to make this API call if user has changed ticket info      	
+          $ticket = _eventbrite_cck_populate_ticket_from_form($item);
+      	
+          // If this ticket has already been created
+          if (isset($ticket->id)) {
+            // There is a ticket id, which means that an edit/update needs to happen
+            if ($ticket_id = eventbrite_save('ticket_update', $ticket)) {
+              drupal_set_message(t('This ticket was successfully updated on the Eventbrite server'));
             }
-            drupal_set_message('Could not update the ticket', 'error');
-          }          	
-        }
-        else {
-//        	drupal_set_message('huh?');
-          // There is no ticket id, which means ticket needs to be created
-          $ticket->event_id = $new_event->id;
-        
-          if ($ticket_id = eventbrite_save('ticket_new', $ticket)) {
-            drupal_set_message(t('The new ticket was successfully created - '.$ticket_id));
-            
-            // Set ticket id in item that will be saved to DB
-            // TODO: Figure these fields out
-            $items[$delta]['tickets'][0]['ticket_id'] = $ticket_id;
-            $node_field = $node->$field['field_name'];
-            $node_field[$delta]['tickets'][0]['ticket_id'] = $ticket_id;
-            $node->$field['field_name'] = $node_field;
-            
+            else {
+              // Save request could not be completed
+              // TODO: clear the ticket values--the event has now been submitted 
+              if ($errors = eventbrite_errors()) {
+                foreach ($errors as $error_type => $error_msg) {
+                  drupal_set_message($error_type .': '. $error_msg, 'error');
+                }
+              }
+              drupal_set_message('Could not update the ticket', 'error');
+            }          	
           }
           else {
-            // TODO: set a form error here so that the field does not validate (rather than dsm())
-            // TODO: clear ticket values or something
-            drupal_set_message('Could not create the ticket', 'error');
+            // There is no ticket id, which means ticket needs to be created
+            $ticket->event_id = $new_event->id;
+        
+            if ($ticket_id = eventbrite_save('ticket_new', $ticket)) {
+              drupal_set_message(t('The new ticket was successfully created on the Eventbrite server.'));
+            
+              // Set ticket id in item that will be saved to DB
+              // TODO: Figure these fields out
+              // Other ticket fields will be autosaved in tickets
+              $items[$delta]['tickets'][0]['ticket_id'] = $ticket_id;
+            }
+            else {
+              // TODO: set a form error here so that the field does not validate (rather than dsm())
+              // TODO: clear ticket values or something
+              drupal_set_message('Could not create the ticket', 'error');
+            }
           }
+          // The call to create/update ticket just returns ticket id w/ confirmation
+          //   And Eventbrite does not have a get ticket API call yet
+          //   So nothing to stuff back into the database
         }
-      }  
-      */
+      }
     }
   }
 }
@@ -586,4 +538,37 @@ function _eventbrite_cck_populate_event_from_form($item) {
     $event->timezone = eventbrite_timezone_offset($event->tz_offset);
     //  }
   return $event;
+}
+
+function _eventbrite_cck_populate_ticket_from_form($item) {
+  $ticket = new stdClass();
+
+  // Add ticket data to request
+  if (isset($item['tickets'][0]['ticket_id'])) {
+  	$ticket->id = $item['tickets'][0]['ticket_id'];
+  }
+  $ticket->name = $item['tickets'][0]['ticket_name'];
+  $ticket->quantity = $item['tickets'][0]['quantity'];
+  if (!empty($item['tickets'][0]['ticket_description'])) {
+    $ticket->description = $item['tickets'][0]['ticket_description'];
+  }
+  switch ($item['tickets'][0]['ticket_type']) {
+    case 'fixed':
+      $ticket->price = $item['tickets'][0]['price'];
+      $ticket->is_donation = 0;
+      break;
+    case 'free':
+      $ticket->price = 0.00;
+      $ticket->is_donation = 0;
+      break;
+    case 'donation':
+      $ticket->price = '';
+      $ticket->is_donation = 1;
+      break;
+    default:
+      $ticket->price = $item['tickets'][0]['price'];
+      $ticket->is_donation = 0;
+      break;
+  }
+  return $ticket;
 }

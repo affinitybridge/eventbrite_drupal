@@ -152,10 +152,8 @@ function eventbrite_cck_field($op, &$node, $field, &$items, $teaser, $page) {
  */
 function eventbrite_cck_content_is_empty($item, $field) {
   if (empty($item['ebid']) && empty($item['title']) && empty($item['load_ebid'])) {
-  	drupal_set_message('in eventbrite_cck_content_is_empty returning true');
     return TRUE;
   }
-  	drupal_set_message('in eventbrite_cck_content_is_empty returning false');
 }
 
 function eventbrite_cck_default_value(&$form, &$form_state, $field, $delta) {
