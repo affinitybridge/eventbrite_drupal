@@ -94,18 +94,9 @@ function _eventbrite_cck_field_settings_db_columns($field) {
 
 
 function _eventbrite_cck_field_settings_form($field) {
-  // TODO: There will be settings that go on this form
-  //
-  // -default date stuff likely
-  //       (Maybe we will have to come up with some)  	
-    
-  // 'form' and 'save' ops may not be needed for this field
-  // 
-  // Create the form element to be used on the field 
-  // settings form. Field settings will be the same for 
-  // all shared instances of the same field and should 
-  // define the way the value will be stored 
-  // in the database.
+  // TODO: There will be more settings that go on this form
+  //         Maybe default date settings
+
   $form = array();
   
   $form['eventbrite'] = array(
@@ -129,25 +120,6 @@ function _eventbrite_cck_field_settings_form($field) {
 }
 
 function _eventbrite_cck_field_settings_save($field) {
-  // TODO: There will be settings that go on this form
-  //
-  // -default date stuff likely
-  //       (Maybe we will have to come up with some)  	
-    
-  // 'form' and 'save' ops may not be needed for this field
-  // 
-  // Create the form element to be used on the field 
-  // settings form. Field settings will be the same for 
-  // all shared instances of the same field and should 
-  // define the way the value will be stored 
-  // in the database.
-
-  // Return an array of the names of the field settings 
-  // defined by this module. These are the items that 
-  // CCK will store in the field definition
-  // and they will be available in the $field array.
-  // This should match the items defined in 'form' above.
-
   return array('allow_create_edit', 'allow_load');
 }
 
@@ -268,42 +240,6 @@ function _eventbrite_cck_field_validate(&$node, $field, &$items, $teaser, $page)
       }
 
       // TODO: Add some date validation stuff back in later if there is a need
-      /*
-      // Don't try to validate if there were any errors before this point since the element won't have been munged back into a date.
-      // TODO: Can probably remove the if !form_get_errors() as we're returning if there are any errors
-          
-      if (!form_get_errors()) {
-        foreach ($items as $delta => $item) {
-          $process = date_process_values($field);
-          foreach ($process as $processed) {
-            $error_field = $field['field_name'] .']['. $delta .']['. $processed;
-            // Not sure that this next line needs to be in here
-            $error_field .= $field['widget']['type'] == 'date_select' ? '][year' : '';
-            // $field['todate'] will always be required, these validation routines should be simpler
-            if ($processed == 'start_date' && $field['todate']
-              && !date_is_valid($item['start_date'], $field['type'], $field['granularity'])
-              && (date_is_valid($item['end_date'], $field['type'], $field['granularity']))) {
-                form_set_error($error_field, t("A 'From date' date is required for field %field %delta.", array('%delta' => $field['multiple'] ? intval($delta + 1) : '', '%field' => t($field['widget']['label']))));
-            }
-            if ($processed == 'end_date'
-              && $field['todate'] == 'required' && ($field['required']
-              && date_is_valid($item['start_date'], $field['type'], $field['granularity'])
-              && !date_is_valid($item['end_date'], $field['type'], $field['granularity']))) {
-                form_set_error($error_field, t("A 'To date' is required for field %field %delta.", array('%delta' => $field['multiple'] ? intval($delta + 1) : '', '%field' => t($field['widget']['label']))));
-            }
-          }
-        }
-      }
-      */
-          
-      /* TODO: Should we checking that ebid is valid?  Widget will not allow for editing of this value, so should be good
-      // Check to see that this is a gettable event
-      if (!eventbrite_get('event_get', $item['ebid'])) {
-        form_set_error($field['field_name'], t('"%ebid" is not a valid event id in the Eventbrite system', array('%ebid' => $item['ebid'])));
-        return false;
-      }
-      */
-
     }
   }
   return $items;
