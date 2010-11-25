@@ -1,0 +1,63 @@
+<?php
+// $Id
+
+/**
+ * @file
+ * Install hooks for Eventbrite User.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function eventbrite_og_schema() {
+  $schema = array();
+  
+  $schema['eventbrite_og'] = array(
+    'fields' => array(
+      'nid' => array(
+        'description'     => "The group's {node}.nid.",
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'account' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ),
+      'password' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'user_key' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('nid'),
+  );
+  
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function eventbrite_og_install() {
+  drupal_install_schema('eventbrite_og');
+}
+
+/**
+ * Remove variables on uninstall.
+ */
+function eventbrite_og_uninstall() {
+  drupal_uninstall_schema('eventbrite_og');
+}
+

@@ -1,0 +1,338 @@
+<?php
+// $Id$
+
+// Selective groups states. chosen by the group admin
+define ('EVENTBRITE_OG_DEFAULT', 0);
+define ('EVENTBRITE_OG_SUBUSER', 1);
+define ('EVENTBRITE_OG_CUSTOM', 2);
+
+/**
+ * Implementation of hook_menu().
+ */
+function eventbrite_og_menu() {
+	/*
+  $items['user/%/eventbrite'] = array(
+    'title' => t('Eventbrite'),
+    'description' => t('Configure personal Eventbrite settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_user_default_payment_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+//    'file' => 'eventbrite_ui.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['user/%/eventbrite/api'] = array(
+    'title' => 'API Settings',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -1,
+  );
+  */
+  $items['eventbrite_og/payment-settings/%node'] = array(
+    // TODO: Add group name to title field
+    'title' => t('Eventbrite default payment settings for group'),
+    'description' => t('Default payment settings for Eventbrite events created within this group'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_og_default_payment_settings', 2),
+    // TODO: Add group admin check for permissions
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+//    'file' => 'eventbrite_ui.pages.inc',
+    'type' => MENU_CALLBACK,
+  );
+  
+  
+  
+  $items['eventbrite_og/venues/%node'] = array(
+    // TODO: Add group name to title field
+    'title' => t('Eventbrite venues for group'),
+    'description' => t('Venues for Eventbrite events created within this group'),
+    'page callback' => 'eventbrite_og_venue_list',
+    'page arguments' => array(2),
+    // TODO: Add group admin check for permissions
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+//    'file' => 'eventbrite_ui.pages.inc',
+    'type' => MENU_CALLBACK,
+  );
+  
+  $items['eventbrite_og/%node/venues/list'] = array(
+    // TODO: Add group name to title field
+    'title' => t('List Venues'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -1,
+  );
+  
+  
+  $items['eventbrite_og/%node/venues/add'] = array(
+    'title' => 'Add Venue',
+    'description' => 'Add an Eventbrite venue',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_venue_form'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_user_default_payment_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+//    'file' => 'eventbrite_ui.forms.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  /*
+  $items['eventbrite_og/%/venues/list-venues'] = array(
+    'title' => 'List Venues',
+    'description' => 'List Eventbrite venues',
+    'page callback' => 'eventbrite_ui_venue_list',
+//    'page arguments' => array('eventbrite_admin_settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_user_default_payment_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+//    'file' => 'eventbrite_ui.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  
+  */
+/*
+  $items['admin/settings/eventbrite/add-venue'] = array(
+    'title' => 'Add Venue',
+    'description' => 'Add an Eventbrite venue',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_venue_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'eventbrite_ui.forms.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/settings/eventbrite/list-venues'] = array(
+    'title' => 'List Venues',
+    'description' => 'List Eventbrite venues',
+    'page callback' => 'eventbrite_ui_venue_list',
+//    'page arguments' => array('eventbrite_admin_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'eventbrite_ui.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  */
+	/*
+	
+  $items['eventbrite_ui/events'] = array(
+    'title' => t('Eventbrite Events'),
+    'page callback' => 'eventbrite_ui_event_list',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'eventbrite_ui.pages.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['eventbrite_ui/new-event'] = array(
+    'title' => t('Create a new Event'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_ui_event_form'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'eventbrite_ui.pages.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['eventbrite_ui/event/%'] = array(
+    'title' => 'Single Eventbrite Event',
+    'page callback' => 'eventbrite_ui_event',
+    'page arguments' => array(2),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'eventbrite_ui.pages.inc',
+    'type' => MENU_CALLBACK,
+  );
+  
+  $items['eventbrite_ui/event/%/view'] = array(
+    'title' => 'View',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -1,
+  );
+  
+  $items['eventbrite_ui/event/%/edit'] = array(
+    'title' => 'Edit Event',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_ui_event_form', 2),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'eventbrite_ui.pages.inc',
+    'type' => MENU_LOCAL_TASK,
+  );  
+  */
+  
+  return $items;
+}
+
+// venue id is 0 for new venues
+function eventbrite_og_venue_form($form_state, $venue_id = 0) {
+//  $payment_settings_form = eventbrite_ui_payment_settings_form();
+//  return system_settings_form($payment_settings_form);
+//drupal_set_message('yar'.$yar);
+  og_set_group_context($group_node);
+	
+  module_load_include('inc', 'eventbrite_ui', 'eventbrite_ui.forms');
+  $form = eventbrite_ui_payment_settings_form();
+  
+  return $form;
+}
+
+function eventbrite_og_venue_list($group_node) {
+//  $payment_settings_form = eventbrite_ui_payment_settings_form();
+//  return system_settings_form($payment_settings_form);
+//drupal_set_message('yar'.$yar);
+  og_set_group_context($group_node);
+
+  return 'This is the event listing page';
+  module_load_include('inc', 'eventbrite_ui', 'eventbrite_ui.forms');
+  $form = eventbrite_ui_payment_settings_form();
+  
+  return $form;
+}
+
+function eventbrite_og_default_payment_settings($form_state, $group_node) {
+//  $payment_settings_form = eventbrite_ui_payment_settings_form();
+//  return system_settings_form($payment_settings_form);
+//drupal_set_message('yar'.$yar);
+  og_set_group_context($group_node);
+	
+  module_load_include('inc', 'eventbrite_ui', 'eventbrite_ui.forms');
+  $form = eventbrite_ui_payment_settings_form();
+  
+  return $form;
+}
+
+/**
+ * Implementation of hook_nodeapi().
+ */
+function eventbrite_og_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+  switch ($op) {
+    case 'load':
+      
+      /*
+      if (og_is_group_post_type($node->type)) {
+        // Can't assume that og_access post records already exist. See http://drupal.org/node/522728.
+        $public_value = db_result(db_query("SELECT og_public FROM {eventbrite_og} WHERE nid = %d", $node->nid));
+        $node->og_public = ($public_value === '0') ? FALSE : TRUE;
+      }
+      */
+      break;
+    case 'prepare':
+      drupal_set_message('preparing the node');
+      $node->eb_account = EVENTBRITE_OG_DEFAULT;
+      if (isset($node->nid) && og_is_group_type($node->type)) {
+      	// Node has already been created
+      	$result = db_query('SELECT * FROM {eventbrite_og} WHERE nid = %d', $node->nid);
+      	if ($row = db_fetch_object($result)) {
+      	  // Node is in the list, load values to show on edit form
+      	  // TODO: should this be in its own function?
+      	  drupal_set_message('found the node nid');
+      	  $node->eb_account = $row->account;
+      	  $node->eb_user_key = $row->user_key;
+      	}
+      }
+      break;
+
+    case 'insert':
+    case 'update':
+      if (og_is_group_type($node->type)) {
+        _eventbrite_og_group_submit($node);
+      }
+      break;
+
+    case 'delete':
+      if (og_is_group_type($node->type)) {
+        $sql = "DELETE FROM {eventbrite_og} WHERE nid = %d";
+        db_query($sql, $node->nid);
+      }
+      break;
+  }
+}
+
+
+function eventbrite_og_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['#node'])) {
+    $node = $form['#node'];
+  	if ($form_id == $node->type.'_node_form' && og_is_group_type($node->type)) {
+      $form['eventbrite_og'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Eventbrite Settings'),
+      );
+      // TODO: Do not show all the options if not all options are enabled
+      $account_options = array(
+        EVENTBRITE_OG_DEFAULT => t('Use the site\'s Eventbrite account for events created within this group'),
+        EVENTBRITE_OG_SUBUSER => t('Create a subuser account under the site\' Eventbrite account'),
+        EVENTBRITE_OG_CUSTOM => t('Enter an Eventbrite user key to use as the Eventbrite account'),
+      );
+      $form['eventbrite_og']['eb_account'] = array(
+        '#type' => 'radios',
+        '#title' => t('Eventbrite Settings'),
+        '#options' => $account_options,
+        '#required' => 1,
+        '#default_value' => $node->eb_account,
+      );
+      
+      $form['eventbrite_og']['eb_user_key'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Enter your user key'),
+        '#description' => t('Link to find the user key'),
+        '#default_value' => $node->eb_user_key,
+      );
+      $form['#validate'][] = 'eventbrite_og_group_node_validate';
+  	}
+  }
+}
+
+function eventbrite_og_group_node_validate($form, &$form_state) {
+  switch ($form_state['values']['eb_account']) {
+  	case EVENTBRITE_OG_CUSTOM:
+  	  if (empty($form_state['values']['eb_user_key'])) {
+        form_set_error('eb_user_key', t('You must enter a user key when selecting that Eventbrite account option.'));
+  	    return;
+  	  }
+  	  // TODO: Check this user key to see that it is a valid user key
+  	  // If it is not we need to set a form error
+  	  break;
+  }
+}
+
+function _eventbrite_og_group_submit($node) {
+  // $node->nid will be set at this point
+  $eventbrite_og = array(
+    'nid' => $node->nid,
+    'account' => $node->eb_account,
+    'user_key' => $node->eb_user_key,
+  );
+
+  $result = db_query('SELECT * FROM {eventbrite_og} WHERE nid = %d', $node->nid);
+  if ($row = db_fetch_object($result)) {
+	// There is a row in here already
+    drupal_write_record('eventbrite_og', $eventbrite_og, 'nid');
+  }
+  else {
+  	// There is no row here, have to insert
+    drupal_write_record('eventbrite_og', $eventbrite_og);
+  }
+  // TODO: should the initial save be here?
+}
+
+/**
+* Implementation of hook_og_link_alter().
+*/
+function eventbrite_og_og_links_alter(&$links, $group_node) {
+  // TODO: check if this is group admin
+  // TODO: check if the right setting is enabled in the eventbrite group
+  $links['eventbrite_og_venues'] = l('Group venues', 'eventbrite_og/venues/'. $group_node->nid);
+  $links['eventbrite_og_payment_settings'] = l('Group payment settings', 'eventbrite_og/payment-settings/'. $group_node->nid);
+}
+/*
+//'eventbrite_og/%/payment-settings'
+function eventbrite_og_default_payment_settings() {
+//  $payment_settings_form = eventbrite_ui_payment_settings_form();
+//  return system_settings_form($payment_settings_form);
+  module_load_include('inc', 'eventbrite_ui', 'eventbrite_ui.forms');
+  $form = eventbrite_ui_payment_settings_form();
+  
+  return $form;
+}
+*/

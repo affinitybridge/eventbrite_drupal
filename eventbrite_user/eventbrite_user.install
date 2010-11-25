@@ -1,0 +1,47 @@
+<?php
+// $Id
+
+/**
+ * @file
+ * Install hooks for Eventbrite User.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function eventbrite_user_schema() {
+  $schema['eventbrite_user'] = array(
+    'fields' => array(
+      'uid' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => "User's {users}.uid.",
+      ),
+      'eventbrite_user_key' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'description' => 'The user\'s Eventbrite user key.',
+      )
+    ),
+    'primary key' => array('uid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function eventbrite_user_install() {
+  drupal_install_schema('eventbrite_user');
+}
+
+/**
+ * Remove variables on uninstall.
+ */
+function eventbrite_user_uninstall() {
+  drupal_uninstall_schema('eventbrite_user');
+}
+
