@@ -8,3 +8,4 @@ package = Eventbrite
 dependencies[] = content
 dependencies[] = date_api
 dependencies[] = eventbrite
+dependencies[] = eventbrite_ui

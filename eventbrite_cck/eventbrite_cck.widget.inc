@@ -502,12 +502,15 @@ function _eventbrite_cck_event_widget_process_payment($element) {
     ),
   );
 
-  $fieldset['payment_info'] = array(
-    '#type' => 'item',
-    '#value' => t('Payment Settings are not yet implemented'),
-  );
+  module_load_include('inc', 'eventbrite_ui', 'eventbrite_ui.forms');
+  $payment_settings_form = eventbrite_ui_payment_settings_form();
+  
+//  $fieldset['payment_info'] = array(
+//    '#type' => 'item',
+//    '#value' => t('Payment Settings are not yet implemented'),
+//  );
 
-  return $fieldset;
+  return $fieldset + $payment_settings_form;
 }
 
 function _eventbrite_cck_event_widget_validate(&$element, &$form_state) {
