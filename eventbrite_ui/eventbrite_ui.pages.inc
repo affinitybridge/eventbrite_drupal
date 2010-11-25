@@ -177,3 +177,33 @@ function eventbrite_ui_event($eventbrite_id) {
   }
   return $output;
 }
+
+
+function eventbrite_ui_venue_list() {
+  // Pull all events from Eventbrite
+  if ($events = eventbrite_get('user_list_events')) {
+  	// TODO: check user access permissions before showing edit link (it will not work without perms, but dead link shouldn't show
+    $header = array('Title', 'Description', 'Start Date', 'End Date', 'Edit Link');
+    $rows = array();
+    foreach ($events as $event) {
+      $rows[] = array(
+        l($event->title, 'eventbrite_ui/event/'.$event->id), 
+        $event->description, 
+        format_date($event->start_date, 'medium'), 
+        format_date($event->end_date, 'medium'),
+        l('edit', 'eventbrite_ui/event/'. $event->id .'/edit'),
+      );
+    }
+    $output .= theme('table', $header, $rows);
+  }
+  return $output;
+}
+
+function eventbrite_ui_default_payment_settings() {
+//  $payment_settings_form = eventbrite_ui_payment_settings_form();
+//  return system_settings_form($payment_settings_form);
+  module_load_include('inc', 'eventbrite_ui', 'eventbrite_ui.forms');
+  $form = eventbrite_ui_payment_settings_form();
+  
+  return $form;
+}
