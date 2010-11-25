@@ -7,15 +7,23 @@
 function eventbrite_menu() {
 
   $items['admin/settings/eventbrite'] = array(
-    'title' => 'Eventbrite',
+    'title' => t('Eventbrite API Settings'),
     'description' => 'Configure Eventbrite API settings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('eventbrite_admin_settings'),
     'access callback' => 'user_access',
     'access arguments' => array('administer site configuration'),
+//    'type' => MENU_CALLBACK,
     'file' => 'eventbrite.admin.inc',
   );
+  
+  $items['admin/settings/eventbrite/api'] = array(
+    'title' => t('API'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -1,
+  );
 
+  
   return $items;
 }
 
@@ -74,4 +82,3 @@ function eventbrite_timezone_offset($offset) {
   $eb_timezone .= (abs($offset) >= 10) ? abs($offset) : '0'. abs($offset);
   return $eb_timezone;
 }
-
