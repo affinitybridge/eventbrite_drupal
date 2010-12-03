@@ -51,6 +51,8 @@ function eventbrite_save($op, $object) {
       return _eventbrite_api_ticket_new($object);
     case 'ticket_update':
       return _eventbrite_api_ticket_update($object);
+    case 'user_new':
+      return _eventbrite_api_user_new($object);
   }
 }
 

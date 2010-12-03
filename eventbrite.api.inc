@@ -57,7 +57,7 @@ function _eventbrite_api_populate_event($event_data) {
 
 function _eventbrite_api_event_new($event) {
   $request = _eventbrite_common_new_request('event_new', 'save');
-drupal_set_message('into event api new');
+
   // Add event data to request
   $request->params['title'] = $event->title;
   $request->params['description'] = $event->description;
@@ -80,6 +80,36 @@ drupal_set_message('into event api new');
       // Expire the cache of event listing
       _eventbrite_common_cache_expire('user_list_events');
       return $event_id;
+    }
+  }
+}
+
+function _eventbrite_api_user_new($user) {
+  $request = _eventbrite_common_new_request('user_new', 'save');
+
+  // Add event data to request
+  $request->params['email'] = $user->email;
+  $request->params['passwd'] = $user->passwd;
+
+  // Result will only return if no error
+  if ($result = _eventbrite_common_process_request($request)) {
+    // Populate the event coming back and return it
+    $xml_object = $result->object;
+
+    if ($user_id = (integer)$xml_object->id) {
+      $eb_user = new stdClass();
+      $eb_user->id = user_id;
+      $eb_user->user_key = (string)$xml_object->user_key;
+      
+      // Record in watchdog
+      $message = (string)$xml_object->message;
+      watchdog(
+        'eventbrite',
+        "Message: %message\nEventbrite Subuser ID: %id\nUser key: %user_key",
+        array('%message' => $message, '%id' => $eb_user->id, '%user_key' => $eb_uesr->user_key)
+      );
+
+      return $eb_user;
     }
   }
 }
