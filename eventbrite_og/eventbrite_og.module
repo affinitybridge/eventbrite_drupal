@@ -2,7 +2,7 @@
 // $Id$
 
 // Selective groups states. chosen by the group admin
-define ('EVENTBRITE_OG_DEFAULT', 0);
+define ('EVENTBRITE_OG_DISABLED', 0);
 define ('EVENTBRITE_OG_SUBUSER', 1);
 define ('EVENTBRITE_OG_CUSTOM', 2);
 
@@ -202,14 +202,32 @@ function eventbrite_og_default_payment_settings($form_state, $group_node) {
   return $form;
 }
 
+// TODO: This may not need to be in its own function after all, only call is in hook_nodeapi() load op
+function _eventbrite_og_load($nid) {
+  $result = db_query('SELECT * FROM {eventbrite_og} WHERE nid = %d', $nid);
+  if ($row = db_fetch_object($result)) {
+	return $row;
+  }
+}
+
 /**
  * Implementation of hook_nodeapi().
  */
 function eventbrite_og_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
   switch ($op) {
     case 'load':
-      
-      /*
+    	drupal_set_message('loading the node');
+      // if this is a group type
+      if (og_is_group_type($node->type)) {
+      	$node->eb_account = EVENTBRITE_OG_DISABLED;
+      	if (isset($node->nid) && ($eventbrite_og = _eventbrite_og_load($node->nid))) {
+          $node->eb_account = $eventbrite_og->account;
+      	  $node->eb_user_key = $eventbrite_og->user_key;
+      	  $node->eb_id = $eventbrite_og->id;
+      	  $node->eb_password = $eventbrite_og->password;
+      	}
+      }
+       /*
       if (og_is_group_post_type($node->type)) {
         // Can't assume that og_access post records already exist. See http://drupal.org/node/522728.
         $public_value = db_result(db_query("SELECT og_public FROM {eventbrite_og} WHERE nid = %d", $node->nid));
@@ -218,19 +236,20 @@ function eventbrite_og_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
       */
       break;
     case 'prepare':
+    	/*
       drupal_set_message('preparing the node');
-      $node->eb_account = EVENTBRITE_OG_DEFAULT;
+      $node->eb_account = EVENTBRITE_OG_DISABLED;
       if (isset($node->nid) && og_is_group_type($node->type)) {
       	// Node has already been created
-      	$result = db_query('SELECT * FROM {eventbrite_og} WHERE nid = %d', $node->nid);
-      	if ($row = db_fetch_object($result)) {
+      	if ($eventbrite_og = _eventbrite_og_load($node->nid)) {
       	  // Node is in the list, load values to show on edit form
       	  // TODO: should this be in its own function?
       	  drupal_set_message('found the node nid');
-      	  $node->eb_account = $row->account;
-      	  $node->eb_user_key = $row->user_key;
+      	  $node->eb_account = $eventbrite_og->account;
+      	  $node->eb_user_key = $eventbrite_og->user_key;
       	}
       }
+      */
       break;
 
     case 'insert':
@@ -249,36 +268,81 @@ function eventbrite_og_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
   }
 }
 
+function eventbrite_og_form_node_type_form_alter(&$form, &$form_state) {
+  $type = $form['#node_type']->type;
+  if (og_is_group_type($type)) {
+  	// This is a group type so add form elements for eventbrite_og
+    $form['#submit'][] = 'eventbrite_og_node_type_form_submit';  	
+    drupal_set_message('what what?');
+    $form['og']['eventbrite_og'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Eventbrite integration for Organic Groups'),
+      '#options' => array(
+        EVENTBRITE_OG_SUBUSER => t('Allow groups to create a subuser to manage their events'),
+        EVENTBRITE_OG_CUSTOM => t('Allow groups to enter an Eventbrite user key to manage their events'),
+      ),
+      '#default_value' => variable_get('eventbrite_og_'.$type, array()),
+      '#description' => t('You must enable at least one of these options in order to create events from within a group'),
+      '#weight' => 10,
+    );
+  }
+  
+}
+
+function eventbrite_og_node_type_form_submit($form, &$form_state) {
+  $form_values = $form_state['values'];
+  variable_set('eventbrite_og_'.$form_values['type'], array_values($form_values['eventbrite_og']));
+}
+
+function eventbrite_og_get_account_options($type) {
+  $account_options = array();
+  $allowed_options = variable_get('eventbrite_og_'.$type, array());
+  if (!empty($allowed_options)) {
+  	$account_options[EVENTBRITE_OG_DISABLED] = t('Do not enable event management for this group');
+  	if (in_array(EVENTBRITE_OG_SUBUSER, $allowed_options)) {
+  	  $account_options[EVENTBRITE_OG_SUBUSER] = t('Create a subuser account under the site\' Eventbrite account');
+    }
+    if (in_array(EVENTBRITE_OG_CUSTOM, $allowed_options)) {
+      $account_options[EVENTBRITE_OG_CUSTOM] = t('Enter an Eventbrite user key to use as the Eventbrite account');
+    }
+  }
+
+  return $account_options;
+}
 
 function eventbrite_og_form_alter(&$form, &$form_state, $form_id) {
   if (isset($form['#node'])) {
     $node = $form['#node'];
   	if ($form_id == $node->type.'_node_form' && og_is_group_type($node->type)) {
-      $form['eventbrite_og'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Eventbrite Settings'),
-      );
-      // TODO: Do not show all the options if not all options are enabled
-      $account_options = array(
-        EVENTBRITE_OG_DEFAULT => t('Use the site\'s Eventbrite account for events created within this group'),
-        EVENTBRITE_OG_SUBUSER => t('Create a subuser account under the site\' Eventbrite account'),
-        EVENTBRITE_OG_CUSTOM => t('Enter an Eventbrite user key to use as the Eventbrite account'),
-      );
-      $form['eventbrite_og']['eb_account'] = array(
-        '#type' => 'radios',
-        '#title' => t('Eventbrite Settings'),
-        '#options' => $account_options,
-        '#required' => 1,
-        '#default_value' => $node->eb_account,
-      );
-      
-      $form['eventbrite_og']['eb_user_key'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Enter your user key'),
-        '#description' => t('Link to find the user key'),
-        '#default_value' => $node->eb_user_key,
-      );
-      $form['#validate'][] = 'eventbrite_og_group_node_validate';
+      $account_options = eventbrite_og_get_account_options($node->type);
+  		
+      if ($account_options) {
+        $form['eventbrite_og'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Eventbrite Settings'),
+        );
+
+        $form['eventbrite_og']['eb_account'] = array(
+          '#type' => 'radios',
+          '#title' => t('Eventbrite Settings'),
+          '#options' => $account_options,
+          '#required' => 1,
+          '#default_value' => $node->eb_account,
+        );
+
+        if (isset($account_options[EVENTBRITE_OG_CUSTOM])) {
+          $form['eventbrite_og']['eb_user_key'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Enter your user key'),
+            '#description' => t('Link to find the user key'),
+            '#default_value' => $node->eb_user_key,
+          );
+        }
+
+        $form['#validate'][] = 'eventbrite_og_group_node_validate';
+        // TODO: Remove this, we likely will not need it since we have a func
+//        $form['#submit'][] = 'eventbrite_og_group_node_submit';
+      }
   	}
   }
 }
@@ -296,16 +360,64 @@ function eventbrite_og_group_node_validate($form, &$form_state) {
   }
 }
 
+/* Likely do not need this
+function eventbrite_og_group_node_submit($form, &$form_state) {
+  switch ($form_state['values']['eb_account']) {
+  	case EVENTBRITE_OG_CUSTOM:
+  	  break;
+  	  if (empty($form_state['values']['eb_user_key'])) {
+        form_set_error('eb_user_key', t('You must enter a user key when selecting that Eventbrite account option.'));
+  	    return;
+  	  }
+  	  // TODO: Check this user key to see that it is a valid user key
+  	  // If it is not we need to set a form error
+  	  break;
+  	
+  	case EVENTBRITE_OG_CUSTOM:
+  	  break;
+  	  if (empty($form_state['values']['eb_user_key'])) {
+        form_set_error('eb_user_key', t('You must enter a user key when selecting that Eventbrite account option.'));
+  	    return;
+  	  }
+  	  // TODO: Check this user key to see that it is a valid user key
+  	  // If it is not we need to set a form error
+  	  break;
+  }
+}
+*/
+
+
 function _eventbrite_og_group_submit($node) {
   // $node->nid will be set at this point
   $eventbrite_og = array(
     'nid' => $node->nid,
     'account' => $node->eb_account,
-    'user_key' => $node->eb_user_key,
+//    'user_key' => $node->eb_user_key,
   );
 
   $result = db_query('SELECT * FROM {eventbrite_og} WHERE nid = %d', $node->nid);
-  if ($row = db_fetch_object($result)) {
+  $db_row = db_fetch_object($result);
+
+  switch ($eventbrite_og['account']) {
+  	case EVENTBRITE_OG_SUBUSER:
+  	  // TODO: Check if there is a subuser created already.
+  	  if (empty($db_row->id)) {
+  	  	// TODO: Create a subuser for this group
+        $sub_user = new stdClass();
+        $sub_user->email = '??';
+        $sub_user->passwd = '??';
+  	  	
+  	  	if ($new_sub_user = eventbrite_save('user_new', $sub_user)) {
+  	  	  $new
+  	  	}
+  	  }
+  	  break;
+  	case EVENTBRITE_OG_CUSTOM:
+  	  $eventbrite_og->user_key = $node->eb_user_key;
+  	  break;
+  }
+  
+  if ($db_row) {
 	// There is a row in here already
     drupal_write_record('eventbrite_og', $eventbrite_og, 'nid');
   }
@@ -313,7 +425,6 @@ function _eventbrite_og_group_submit($node) {
   	// There is no row here, have to insert
     drupal_write_record('eventbrite_og', $eventbrite_og);
   }
-  // TODO: should the initial save be here?
 }
 
 /**
@@ -336,3 +447,26 @@ function eventbrite_og_default_payment_settings() {
   return $form;
 }
 */
+  
+/**
+ * Implementation of hook_field_access().
+ *
+ * IF there is a group context and IF Eventbrite has not been enabled for this group,
+ *   then boot the field
+ */
+function eventbrite_og_field_access($op, $field, $account, $node = NULL) {
+  switch ($op) {
+    case 'view':
+    case 'edit':
+      if ($field['type'] == 'eventbrite_cck') {
+      	// Check if there is a group context
+      	if (og_is_group_post_type($node->type) && ($group_node = og_get_group_context($node->type))) {
+      	  // Do not show this field if the group node has not been Eventbrite-enabled.
+      	  if ($group_node->eb_account == EVENTBRITE_OG_DISABLED) {
+      	  	return FALSE;
+      	  }
+      	}
+      }
+  }
+  return TRUE;
+}
