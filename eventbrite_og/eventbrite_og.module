@@ -408,7 +408,7 @@ function _eventbrite_og_group_submit($node) {
         $sub_user->passwd = '??';
   	  	
   	  	if ($new_sub_user = eventbrite_save('user_new', $sub_user)) {
-  	  	  $new
+//  	  	  $new
   	  	}
   	  }
   	  break;
