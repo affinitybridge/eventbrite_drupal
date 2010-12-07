@@ -214,57 +214,33 @@ function _eventbrite_og_load($nid) {
  * Implementation of hook_nodeapi().
  */
 function eventbrite_og_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
-  switch ($op) {
-    case 'load':
+  // If this node is a group type
+  if (og_is_group_type($node->type)) {
+    switch ($op) {
+      case 'load':
     	drupal_set_message('loading the node');
-      // if this is a group type
-      if (og_is_group_type($node->type)) {
       	$node->eb_account = EVENTBRITE_OG_DISABLED;
       	if (isset($node->nid) && ($eventbrite_og = _eventbrite_og_load($node->nid))) {
           $node->eb_account = $eventbrite_og->account;
-      	  $node->eb_user_key = $eventbrite_og->user_key;
-      	  $node->eb_id = $eventbrite_og->id;
-      	  $node->eb_password = $eventbrite_og->password;
+      	  $node->eb_custom_user_key = $eventbrite_og->custom_user_key;
+      	  $node->eb_subuser_id = $eventbrite_og->subuser_id;
+      	  $node->eb_subuser_key = $eventbrite_og->subuser_key;
       	}
-      }
-       /*
-      if (og_is_group_post_type($node->type)) {
-        // Can't assume that og_access post records already exist. See http://drupal.org/node/522728.
-        $public_value = db_result(db_query("SELECT og_public FROM {eventbrite_og} WHERE nid = %d", $node->nid));
-        $node->og_public = ($public_value === '0') ? FALSE : TRUE;
-      }
-      */
-      break;
-    case 'prepare':
-    	/*
-      drupal_set_message('preparing the node');
-      $node->eb_account = EVENTBRITE_OG_DISABLED;
-      if (isset($node->nid) && og_is_group_type($node->type)) {
-      	// Node has already been created
-      	if ($eventbrite_og = _eventbrite_og_load($node->nid)) {
-      	  // Node is in the list, load values to show on edit form
-      	  // TODO: should this be in its own function?
-      	  drupal_set_message('found the node nid');
-      	  $node->eb_account = $eventbrite_og->account;
-      	  $node->eb_user_key = $eventbrite_og->user_key;
-      	}
-      }
-      */
-      break;
+        break;
 
-    case 'insert':
-    case 'update':
-      if (og_is_group_type($node->type)) {
+      case 'prepare':
+        break;
+
+      case 'insert':
+      case 'update':
         _eventbrite_og_group_submit($node);
-      }
-      break;
+        break;
 
-    case 'delete':
-      if (og_is_group_type($node->type)) {
+      case 'delete':
         $sql = "DELETE FROM {eventbrite_og} WHERE nid = %d";
         db_query($sql, $node->nid);
-      }
-      break;
+        break;
+    }
   }
 }
 
@@ -335,94 +311,81 @@ function eventbrite_og_form_alter(&$form, &$form_state, $form_id) {
             '#type' => 'textfield',
             '#title' => t('Enter your user key'),
             '#description' => t('Link to find the user key'),
-            '#default_value' => $node->eb_user_key,
+            '#default_value' => $node->eb_custom_user_key,
           );
         }
 
         $form['#validate'][] = 'eventbrite_og_group_node_validate';
-        // TODO: Remove this, we likely will not need it since we have a func
-//        $form['#submit'][] = 'eventbrite_og_group_node_submit';
       }
   	}
   }
 }
 
 function eventbrite_og_group_node_validate($form, &$form_state) {
-  switch ($form_state['values']['eb_account']) {
+  $form_values = $form_state['values'];
+  switch ($form_values['eb_account']) {
   	case EVENTBRITE_OG_CUSTOM:
-  	  if (empty($form_state['values']['eb_user_key'])) {
+  	  if (empty($form_values['eb_user_key'])) {
         form_set_error('eb_user_key', t('You must enter a user key when selecting that Eventbrite account option.'));
   	    return;
   	  }
-  	  // TODO: Check this user key to see that it is a valid user key
-  	  // If it is not we need to set a form error
+  	  if (!eventbrite_get('user_get', $form_values['eb_user_key'])) {
+        form_set_error('eb_user_key', t('The Eventbrite API is not accepting that user key.'));
+  	    return;
+   	  }
   	  break;
   }
 }
-
-/* Likely do not need this
-function eventbrite_og_group_node_submit($form, &$form_state) {
-  switch ($form_state['values']['eb_account']) {
-  	case EVENTBRITE_OG_CUSTOM:
-  	  break;
-  	  if (empty($form_state['values']['eb_user_key'])) {
-        form_set_error('eb_user_key', t('You must enter a user key when selecting that Eventbrite account option.'));
-  	    return;
-  	  }
-  	  // TODO: Check this user key to see that it is a valid user key
-  	  // If it is not we need to set a form error
-  	  break;
-  	
-  	case EVENTBRITE_OG_CUSTOM:
-  	  break;
-  	  if (empty($form_state['values']['eb_user_key'])) {
-        form_set_error('eb_user_key', t('You must enter a user key when selecting that Eventbrite account option.'));
-  	    return;
-  	  }
-  	  // TODO: Check this user key to see that it is a valid user key
-  	  // If it is not we need to set a form error
-  	  break;
-  }
-}
-*/
-
 
 function _eventbrite_og_group_submit($node) {
   // $node->nid will be set at this point
   $eventbrite_og = array(
     'nid' => $node->nid,
     'account' => $node->eb_account,
-//    'user_key' => $node->eb_user_key,
   );
 
   $result = db_query('SELECT * FROM {eventbrite_og} WHERE nid = %d', $node->nid);
   $db_row = db_fetch_object($result);
 
+  // Switch on Group account types
   switch ($eventbrite_og['account']) {
   	case EVENTBRITE_OG_SUBUSER:
-  	  // TODO: Check if there is a subuser created already.
-  	  if (empty($db_row->id)) {
-  	  	// TODO: Create a subuser for this group
-        $sub_user = new stdClass();
-        $sub_user->email = '??';
-        $sub_user->passwd = '??';
+  	  // If this group does not have a subuser created already then create one
+  	  if (empty($db_row->subuser_id)) {
+        $subuser = new stdClass();
+
+        // Build a fake email address to user for subuser
+        // TODO: Where is this email going to come from?
+        //       Maybe a hook could be written for custom modules to populate it
+        // Remove non-email characters from group name
+        $group_name = preg_replace('/[^A-Za-z0-9]+/', '_', $node->title);
+        // TODO: Remove example.com, this is here so that it can be run locally
+        $subuser->email = $group_name .'@'. 'example.com';//$_SERVER['SERVER_NAME'];
+        $subuser->passwd = user_password(8);
   	  	
-  	  	if ($new_sub_user = eventbrite_save('user_new', $sub_user)) {
-//  	  	  $new
+  	  	if ($new_subuser = eventbrite_save('user_new', $subuser)) {
+  	  	  drupal_set_message('A new sub account was created on Eventbrite for this group.');
+  	  	  $eventbrite_og['subuser_id'] = $new_subuser->id;
+  	  	  $eventbrite_og['subuser_email'] = $subuser->email;
+  	  	  $eventbrite_og['subuser_password'] = $subuser->email;
+  	  	  $eventbrite_og['subuser_key'] = $new_subuser->user_key;
   	  	}
+  	  	else {
+  	  	  drupal_set_message('A new sub account could not be created on Eventbrite.');
+  	  	}  	  	
   	  }
   	  break;
   	case EVENTBRITE_OG_CUSTOM:
-  	  $eventbrite_og->user_key = $node->eb_user_key;
+  	  // This key will have been checked in the validation step
+  	  $eventbrite_og['custom_user_key'] = $node->eb_user_key;
   	  break;
   }
-  
+
+  // Need to check if there is a row here already
   if ($db_row) {
-	// There is a row in here already
     drupal_write_record('eventbrite_og', $eventbrite_og, 'nid');
   }
   else {
-  	// There is no row here, have to insert
     drupal_write_record('eventbrite_og', $eventbrite_og);
   }
 }
@@ -470,3 +433,35 @@ function eventbrite_og_field_access($op, $field, $account, $node = NULL) {
   }
   return TRUE;
 }
+
+// Implement eventbrite hook hook_eventbrite_request_alter
+function eventbrite_og_eventbrite_request_alter(&$request) {
+  // Check if there is a group context
+  if ($group_node = og_get_group_context()) {
+  	// Check if eventbrite has been enabled for this group
+    if ($group_node->eb_account != EVENTBRITE_OG_DISABLED) {
+  	  switch ($request->op) {
+  	  	case 'user_list_events':
+  	  	case 'event_get':
+        case 'event_new':
+        case 'event_update':
+        case 'ticket_new':
+        case 'ticket_update':
+  	  	  switch ($group_node->eb_account) {
+  	  	  	case EVENTBRITE_OG_CUSTOM:
+  	  	  	  drupal_set_message('Replaced the user key with custom user key '. $group_node->custom_user_key .' on op '. $request->op);
+  	  	  	  $request->user_key = $group_node->custom_user_key;
+  	  	  	  break;
+  	  	  	case EVENTBRITE_OG_SUBUSER:
+  	  	  	  drupal_set_message('Replaced the user key with subuser key '. $group_node->subuser_key .' on op '. $request->op);
+  	  	  	  $request->user_key = $group_node->subuser_key;
+  	  	  	  break;
+  	  	  }
+  	  	  break;
+  	  	default:
+  	  	  drupal_set_message('did not match the right op, so not replacing anything');  
+  	  }
+  	}
+  }
+}
+

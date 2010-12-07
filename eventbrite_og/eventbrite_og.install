@@ -42,7 +42,7 @@ function eventbrite_og_schema() {
       ),
       'subuser_password' => array(
         'type' => 'varchar',
-        'length' => 32,
+        'length' => 8,
         'not null' => FALSE,
       ),
       'subuser_key' => array(
