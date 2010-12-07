@@ -54,15 +54,7 @@ function _eventbrite_cck_event_widget_process($element, $edit, &$form_state, $fo
 
   if ($field['allow_load']) {
     if (!$ebid || !$field['allow_create_edit']) {
-      //---------------- This chunk definitely needs to go into an api call
-      $events = eventbrite_get('user_list_events');
 
-      $options = array();
-      $options[0] = '';
-      foreach ($events as $event_id => $event) {
-        $options[$event_id] = $event->title;
-      }
-      //---------------- This chunk definitely needs to go into an api call  ^^^^^^
       $element['load'] = array(
         '#type' => 'fieldset',
         '#title' => t('Load an event from Eventbrite'),
@@ -88,15 +80,40 @@ function _eventbrite_cck_event_widget_process($element, $edit, &$form_state, $fo
         }
       }
 
-      $element['load']['load_ebid'] = array(
-        '#title' => t( 'Eventbrite Event' ),
-        '#type' => 'select',
-        '#options' => $options,
-        '#default_value' => $ebid,
-        '#weight' => -0,
-        '#parents' => array($field_name, $delta, 'load_ebid'),
-      );
+      // If there are events for this user at Eventbrite, show a select box
+      if ($events_options = eventbrite_get_events_options()) {
+      
+      /* This was replaced by the call to eventbrite_get_events_options
+      $events = eventbrite_get('user_list_events');
 
+      $options = array();
+      $options[0] = '';
+      foreach ($events as $event_id => $event) {
+        $options[$event_id] = $event->title;
+      }
+      */
+      
+        $element['load']['load_ebid'] = array(
+          '#title' => t( 'Eventbrite Event' ),
+          '#type' => 'select',
+          '#options' => $events_options,
+          '#default_value' => $ebid,
+          '#weight' => -0,
+          '#parents' => array($field_name, $delta, 'load_ebid'),
+        );
+
+      }
+      else {
+      	$element['load']['no_events'] = array(
+      	  '#type' => 'item',
+      	  '#value' => t('There are currently no events created in this account.'),
+      	);
+      }
+
+      // TODO: Rather than hiding something with styling it should be given '#access' = 1 through FAPI
+      //       Sort out just what's going on here--CSS should be used if it needs to be toggled back on
+      //       But if there is an ebid and they are allowed to edit and create then it should be hidden
+      //         through FAPI--maybe
       // Hide the select box unless this form is being shown again and it was selected
       if (!$ebid && $field['allow_create_edit'] && $element['#value']['eventbrite_new'] != 'load') {
         $element['load']['#attributes']['style'] = 'display:none;';
