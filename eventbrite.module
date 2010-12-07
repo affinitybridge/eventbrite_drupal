@@ -37,7 +37,12 @@ function eventbrite_get($op, $id = NULL) {
         return _eventbrite_api_get_event($id);
       }
       break;
-  }
+    case 'user_get':
+      if ($id) {
+        return _eventbrite_api_get_user($id);
+      }
+      break;
+    }
 }
 
 function eventbrite_save($op, $object) {
@@ -83,4 +88,19 @@ function eventbrite_timezone_offset($offset) {
   $eb_timezone .= ($offset < 0) ? '-' : '+';
   $eb_timezone .= (abs($offset) >= 10) ? abs($offset) : '0'. abs($offset);
   return $eb_timezone;
+}
+
+/*
+ * This is a function to return user_list_events as a keyed array suitable for option lists
+ *   event_id => event_title
+ */
+function eventbrite_get_events_options() {
+  $options = array();
+  if ($events = eventbrite_get('user_list_events')) {
+    $options[0] = '';
+    foreach ($events as $event_id => $event) {
+      $options[$event_id] = $event->title;
+    }
+  }
+  return $options;
 }
