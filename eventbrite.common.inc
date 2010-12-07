@@ -35,8 +35,9 @@ function _eventbrite_common_process_request($request) {
     return FALSE;
   }
 
-  // TODO: expose a hook here to let other modules change the request
-
+  // Invoke hook_eventbrite_request_alter for sub modules to make changes
+  module_invoke_all('eventbrite_request_alter', $request);
+  
   // Build query string from $request object
   $request->id = isset($request->params['id']) ? $request->params['id'] : 0;
   $request->params['user_key'] = $request->user_key;
