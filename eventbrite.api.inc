@@ -28,6 +28,25 @@ function _eventbrite_api_get_events() {
 }
 
 /*
+ * This function fetches one user by user key
+ */
+function _eventbrite_api_get_user($user_key) {
+  // Build a new request object
+  $request = _eventbrite_common_new_request('user_get', 'get');
+
+  $request->user_key = $user_key;
+
+  if ($result = _eventbrite_common_process_request($request)) {
+  	$xml_object = $result->object;
+    // Just checking if a user id was returned, no need to do anything beyond that
+    // Eventbrite API returns user_id, even though documentation says it returns id
+    if ($subuser_id = (integer)$xml_object->user_id) {
+      return $subuser_id;
+    }
+  }
+}
+
+/*
  * This function fetches one events by Id
  */
 function _eventbrite_api_get_event($event_id) {
@@ -98,7 +117,7 @@ function _eventbrite_api_user_new($user) {
 
     if ($user_id = (integer)$xml_object->id) {
       $eb_user = new stdClass();
-      $eb_user->id = user_id;
+      $eb_user->id = $user_id;
       $eb_user->user_key = (string)$xml_object->user_key;
       
       // Record in watchdog
