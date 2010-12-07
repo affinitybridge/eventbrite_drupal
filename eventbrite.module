@@ -13,7 +13,6 @@ function eventbrite_menu() {
     'page arguments' => array('eventbrite_admin_settings'),
     'access callback' => 'user_access',
     'access arguments' => array('administer site configuration'),
-//    'type' => MENU_CALLBACK,
     'file' => 'eventbrite.admin.inc',
   );
   
@@ -22,11 +21,13 @@ function eventbrite_menu() {
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -1,
   );
-
   
   return $items;
 }
 
+/*
+ * Allows a get-oriented operation to called via the Eventbrite API
+ */
 function eventbrite_get($op, $id = NULL) {
   module_load_include('inc', 'eventbrite', 'eventbrite.api');
   switch ($op) {
@@ -45,6 +46,9 @@ function eventbrite_get($op, $id = NULL) {
     }
 }
 
+/*
+ * Allows a save-oriented operation to called via the Eventbrite API
+ */
 function eventbrite_save($op, $object) {
   module_load_include('inc', 'eventbrite', 'eventbrite.api');
   switch ($op) {
@@ -62,7 +66,11 @@ function eventbrite_save($op, $object) {
 }
 
 /*
- * This is a utility function to manage any errors generated over the page request
+ * DEPRECATED
+ * 
+ * This is a utility function to manage any errors generated over the page request 
+ * 
+ * TODO: Remove this DEPRECATED function as it is not needed and calls to it are in the process of removal
  *
  * param 1: $error_msg: a error message string.  '' when this function is being called to get the errors
  * param 2: $error_type: An Eventbrite supplied value used to associate the error with a form element
@@ -83,10 +91,14 @@ function eventbrite_errors($error_msg = '', $error_type = '') {
   return $errors;
 }
 
+/*
+ * This function translates offset into the formatting that Eventbrite API is expecting
+ */
 function eventbrite_timezone_offset($offset) {
   $eb_timezone = 'GMT';
   $eb_timezone .= ($offset < 0) ? '-' : '+';
   $eb_timezone .= (abs($offset) >= 10) ? abs($offset) : '0'. abs($offset);
+
   return $eb_timezone;
 }
 
@@ -103,4 +115,11 @@ function eventbrite_get_events_options() {
     }
   }
   return $options;
+}
+
+/*
+ * This function returns TRUE if Eventbrite module is set up with valid Eventbrite authentication
+ */
+function eventbrite_is_valid_auth() {
+  return variable_get('eventbrite_is_valid_auth', FALSE);
 }

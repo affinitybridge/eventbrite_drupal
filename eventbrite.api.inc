@@ -37,9 +37,10 @@ function _eventbrite_api_get_user($user_key) {
   $request->user_key = $user_key;
 
   if ($result = _eventbrite_common_process_request($request)) {
-  	$xml_object = $result->object;
+    $xml_object = $result->object;
     // Just checking if a user id was returned, no need to do anything beyond that
     // Eventbrite API returns user_id, even though documentation says it returns id
+    // TODO: write a populate user function much like _eventbrite_api_populate_event()
     if ($subuser_id = (integer)$xml_object->user_id) {
       return $subuser_id;
     }

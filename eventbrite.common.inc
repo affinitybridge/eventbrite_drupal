@@ -28,10 +28,14 @@ function _eventbrite_common_new_request($op, $op_type) {
  * Process a request object that has been modified by an API function
  */
 function _eventbrite_common_process_request($request) {
-  // TODO: put a better validation system in place for eventbrite auth creds
-  if (!$app_key = variable_get('eventbrite_app_key', '')) {
-    // TODO: Fire a better error for having no appication key
-    drupal_set_message('No Application key found', 'error');
+  // Verify that keys have been authenticated before making and requests
+  if (!eventbrite_is_valid_auth()) {
+    // TODO: Add link to admin settings form in message
+    drupal_set_message('Could not authenticate with the Eventbrite server.  Please contact the site administrator.', 'error');
+    $watchdog_message = t('_eventbrite_common_process_request called while eventbrite_is_valid_auth() returns false.  '."\n");
+    $watchdog_message .= t('Verify that valid authenitcation keys have been entered.  '."\n");
+    $watchdog_message .= t('Request: !request', array('!request' => $result->request)) ."\n";
+    watchdog('eventbrite', $watchdog_message, NULL, WATCHDOG_ERROR);
     return FALSE;
   }
 
@@ -49,7 +53,7 @@ function _eventbrite_common_process_request($request) {
   $request->query_string = join('&', $param_list);
 
   // Check cache, if there is something there and it is recent enough then use it
-  //   otherwise we'll actually have to make the call to the server
+  //   Otherwise make a call to the Eventbrite server
   if ($request->op_type == 'get' && $request->allowed_cache) {
     if ($cached_result = _eventbrite_common_check_cache($request)) {
       // There is a cached result, check if it is recent enough to use
@@ -62,11 +66,7 @@ function _eventbrite_common_process_request($request) {
         $result->object = simplexml_load_string($result->data);
         $result->source = 'cache';
         $result->updated = FALSE;
-        drupal_set_message('Found a valid cached result.');
         return $result;
-      }
-      else {
-        drupal_set_message('Found an expired cached result.');
       }
     }
   }
@@ -119,13 +119,13 @@ function _eventbrite_common_process_result(&$result) {
         // If error type is set, log to watchdog
         if (isset($xml_object->error_message)) {
           $result->success = FALSE;
-          // TODO: $request->op should be added to watchdog message
-          // Also check for other error keys
+
           $watchdog_message = t('Error type: !error_type', array('!error_type' => $xml_object->error_type)) ."\n";
           $watchdog_message .= t('Error msg: !error_message', array('!error_message' => $xml_object->error_message)) ."\n";
           $watchdog_message .= t('Request: !request', array('!request' => $result->request)) ."\n";
-          watchdog('eventbrite', $watchdog_message);
+          watchdog('eventbrite', $watchdog_message, NULL, WATCHDOG_WARNING);
 
+          // TODO: Set this via drupal_set_message, ideally we could get rid of eventbrite_errors()
           eventbrite_errors(t((string)$xml_object->error_message), (string)$xml_object->error_type);
           return;
         }
@@ -139,9 +139,9 @@ function _eventbrite_common_process_result(&$result) {
         $watchdog_message = t('Error code: !code', array('!code' => $result->code)) ."\n";
         $watchdog_message .= t('Error msg: !error', array('!error' => $result->error)) ."\n";
         $watchdog_message .= t('Request: !request', array('!request' => $result->request)) ."\n";
-        watchdog('eventbrite', $watchdog_message);
+        watchdog('eventbrite', $watchdog_message, NULL, WATCHDOG_ERROR);
 
-        // TODO: Pick the best error connection
+        // TODO: Set this via drupal_set_message, ideally we could get rid of eventbrite_errors()
         eventbrite_errors(t('The Eventbrite server can not be reached at this time.  Please contact the system administrator'));
 
         return;
@@ -149,7 +149,9 @@ function _eventbrite_common_process_result(&$result) {
   }
 }
 
-
+/*
+ * Check the cache for previous responses from Eventbrite server
+ */
 function _eventbrite_common_check_cache($request) {
   $result = db_query(
     'SELECT * FROM {eventbrite_cache} WHERE op = "%s" AND id = %d AND query_string = "%s"',
@@ -165,6 +167,9 @@ function _eventbrite_common_check_cache($request) {
   }
 }
 
+/*
+ * Cache a response from the Eventbrite server
+ */
 function _eventbrite_common_cache_result($result, $request, $db_op) {
   $request->result = $result;
   $request->timestamp = time();
@@ -178,6 +183,9 @@ function _eventbrite_common_cache_result($result, $request, $db_op) {
   }
 }
 
+/*
+ * Expire a cached response from the Eventbrite server
+ */
 function _eventbrite_common_cache_expire($op, $id = 0) {
   $values = array(
     'op' => $op,
