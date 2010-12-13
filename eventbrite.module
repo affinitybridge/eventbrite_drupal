@@ -7,7 +7,7 @@
 function eventbrite_menu() {
 
   $items['admin/settings/eventbrite'] = array(
-    'title' => t('Eventbrite API Settings'),
+    'title' => t('Eventbrite Settings'),
     'description' => 'Configure Eventbrite API settings',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('eventbrite_admin_settings'),
@@ -17,12 +17,31 @@ function eventbrite_menu() {
   );
   
   $items['admin/settings/eventbrite/api'] = array(
-    'title' => t('API'),
+    'title' => t('API Settings'),
+    'description' => 'Configure Eventbrite API settings',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -1,
   );
   
+  $items['admin/settings/eventbrite/default-payment'] = array(
+    'title' => t('Default Payment Settings'),
+    'description' => t('Configure default payment settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_payment_default_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'eventbrite.payment.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+
   return $items;
+}
+
+/**
+ * Implementation of the hook_permissions()
+ */
+function eventbrite_perm() {
+  return array('administer eventbrite settings');
 }
 
 /*
@@ -55,7 +74,10 @@ function eventbrite_save($op, $object) {
     case 'event_new':
       return _eventbrite_api_event_new($object);
     case 'event_update':
+    	drupal_set_message('in eeventbrite_save');
       return _eventbrite_api_event_update($object);
+    case 'payment_update':
+      return _eventbrite_api_payment_update($object);
     case 'ticket_new':
       return _eventbrite_api_ticket_new($object);
     case 'ticket_update':
@@ -121,5 +143,6 @@ function eventbrite_get_events_options() {
  * This function returns TRUE if Eventbrite module is set up with valid Eventbrite authentication
  */
 function eventbrite_is_valid_auth() {
+	drupal_set_message(variable_get('eventbrite_is_valid_auth', FALSE));
   return variable_get('eventbrite_is_valid_auth', FALSE);
 }

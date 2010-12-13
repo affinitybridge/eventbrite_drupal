@@ -48,6 +48,12 @@ function eventbrite_admin_settings() {
     '#description' => t('The maximum amount of time, in minutes, to cache results from the Eventbrite server.'),
   );
 
+  // Set the Authentication flag to valid on form submit
+  $form['eventbrite_is_valid_auth'] = array(
+    '#type' => 'value',
+    '#value' => TRUE,
+  );
+
   return system_settings_form($form);
 }
 
@@ -65,7 +71,7 @@ function eventbrite_admin_settings_validate($form, &$form_state) {
   }
 
   // Validate the keys
-  if (_eventbrite_admin_authenticate_keys($app_key, $user_key)) {
+  if (_eventbrite_admin_authenticate_keys($eventbrite_app_key, $eventbrite_user_key)) {
     // Keys were successfully authenticated by the Eventbrite server
     return TRUE;
   }
@@ -92,16 +98,6 @@ function eventbrite_admin_settings_validate($form, &$form_state) {
     drupal_set_message(t('The keys you entered could not be validated by the Eventbrite server.  Please check the values.'), 'error');
   }
   return FALSE;
-}
-
-/*
- * Process admin settings form
- */
-function eventbrite_admin_settings_submit($form, &$form_state) {
-  // If the form validated then the Application Key and User Key were authenticated by Eventbrite
-  variable_set('eventbrite_is_valid_auth', TRUE);
-
-  return TRUE;
 }
 
 /*
@@ -141,3 +137,4 @@ function _eventbrite_admin_authenticate_keys($app_key, $user_key) {
     }
   }
 }
+

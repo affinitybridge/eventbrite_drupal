@@ -223,3 +223,41 @@ function _eventbrite_api_ticket_update($ticket) {
     return $ticket_id;
   }
 }
+
+function _eventbrite_api_payment_update($payment) {
+  $request = _eventbrite_common_new_request('payment_update', 'save');
+  
+  // Add payment data to request
+  $request->params['event_id'] = $payment->event_id;
+  $request->params['accept_paypal'] = $payment->accept_paypal;
+  $request->params['paypal_email'] = $payment->paypal_email;
+  $request->params['accept_google'] = $payment->accept_google;
+  $request->params['google_merchant_id'] = $payment->google_merchant_id;
+  $request->params['google_merchant_key'] = $payment->google_merchant_key;
+  $request->params['accept_check'] = $payment->accept_check;
+  $request->params['instructions_check'] = $payment->instructions_check;
+  $request->params['accept_cash'] = $payment->accept_cash;
+  $request->params['instructions_cash'] = $payment->instructions_cash;
+  $request->params['accept_invoice'] = $payment->accept_invoice;
+  $request->params['instructions_invoice'] = $payment->instructions_invoice;
+
+  // XML data will only come back if no error
+  if ($result = _eventbrite_common_process_request($request)) {
+    // Populate the event coming back and return it
+    $xml_object = $result->object;
+
+    // Record in watchdog
+    $message = (string)$xml_object->message;
+    $event_id = (integer)$xml_object->id;
+    $method = (string)$xml_object->method;
+    watchdog(
+      'eventbrite', 
+      "Message: %message\nEventbrite Payment %method for event %id", 
+      array('%message' => $message, '%method' => $method , '%id' => $event_id)
+    );
+
+//    return $method;
+    // TODO: Returning message here rather than method since Eventbrite API does not return method
+    return $message;
+  }
+}

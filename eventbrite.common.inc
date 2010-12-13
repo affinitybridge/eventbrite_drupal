@@ -29,11 +29,11 @@ function _eventbrite_common_new_request($op, $op_type) {
  */
 function _eventbrite_common_process_request($request) {
   // Verify that keys have been authenticated before making and requests
-  if (!eventbrite_is_valid_auth()) {
+  if (!eventbrite_is_valid_auth() || !($app_key = variable_get('eventbrite_app_key', ''))) {
     // TODO: Add link to admin settings form in message
     drupal_set_message('Could not authenticate with the Eventbrite server.  Please contact the site administrator.', 'error');
     $watchdog_message = t('_eventbrite_common_process_request called while eventbrite_is_valid_auth() returns false.  '."\n");
-    $watchdog_message .= t('Verify that valid authenitcation keys have been entered.  '."\n");
+    $watchdog_message .= t('Verify that valid authentication keys have been entered.  '."\n");
     $watchdog_message .= t('Request: !request', array('!request' => $result->request)) ."\n";
     watchdog('eventbrite', $watchdog_message, NULL, WATCHDOG_ERROR);
     return FALSE;
@@ -70,7 +70,6 @@ function _eventbrite_common_process_request($request) {
       }
     }
   }
-
   // Send HTTP request to the server - since we don't have fresh data
   if ($result = drupal_http_request(EVENTBRITE_SERVER . $request->op .'?'. $request->query_string) ) {
     // Process the result if there was one, and return simplexml_load_string($result->data)
