@@ -5,6 +5,8 @@
 // CORE HOOKS
 //==========================================//
 
+// TODO: Add eventbrite_cck_requirements (copy from Eventbrite Blocks)
+
 /**
  * Implementation of hook_elements().
  */
@@ -27,6 +29,13 @@ function eventbrite_cck_elements() {
  */
 function eventbrite_cck_init() {
   drupal_add_css(drupal_get_path('module', 'eventbrite_cck')  .'/eventbrite_cck.css');
+}
+
+/**
+ * Implementation of the hook_permissions()
+ */
+function eventbrite_cck_perm() {
+  return array('edit eventbrite events');
 }
 
 /**
@@ -76,6 +85,19 @@ function eventbrite_cck_theme() {
 //==========================================//
 // CCK FIELD HOOKS
 //==========================================//
+/**
+ * Implementation of hook_field_access().
+ */
+function eventbrite_cck_field_access($op, $field, $account, $node = NULL) {
+  if ($field['type'] == 'eventbrite_cck') {
+	switch ($op) {
+      case 'edit':
+        return user_access('edit eventbrite events');
+    }
+  }
+}
+
+
 /**
  * Implementation of hook_field_info().
  */
@@ -156,7 +178,9 @@ function eventbrite_cck_content_is_empty($item, $field) {
 }
 
 function eventbrite_cck_default_value(&$form, &$form_state, $field, $delta) {
-  return array();
+  return array(
+    
+  );
 }
 
 //==========================================//

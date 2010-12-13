@@ -7,6 +7,9 @@
  *
  */
 
+/**
+ * Implementation of CCK's hook_field_settings($op = 'database columns').
+ */
 function _eventbrite_cck_field_settings_db_columns($field) {
   // Define the database storage for this field
 
@@ -98,7 +101,9 @@ function _eventbrite_cck_field_settings_db_columns($field) {
   return $columns;
 }
 
-
+/**
+ * Implementation of CCK's hook_field_settings($op = 'form').
+ */
 function _eventbrite_cck_field_settings_form($field) {
   // TODO: There will be more settings that go on this form
   //         Maybe default date settings
@@ -125,10 +130,16 @@ function _eventbrite_cck_field_settings_form($field) {
   return $form;
 }
 
+/**
+ * Implementation of CCK's hook_field_settings($op = 'save').
+ */
 function _eventbrite_cck_field_settings_save($field) {
   return array('allow_create_edit', 'allow_load');
 }
 
+/**
+ * Implementation of CCK's hook_field_settings($op = 'validate').
+ */
 function _eventbrite_cck_field_settings_validate($field) {
   if (empty($field['allow_create_edit']) && empty($field['allow_load'])) {
     // TODO: Get the form error set right on this form field
@@ -136,6 +147,9 @@ function _eventbrite_cck_field_settings_validate($field) {
   }
 }
 
+/**
+ * Implementation of CCK's hook_field_settings($op = 'views data').
+ */
 function _eventbrite_cck_field_settings_views_data($field) {
   // TODO: Decide if any changes need to be made to the default $data array created for Views.
 
@@ -205,7 +219,9 @@ function _eventbrite_cck_field_load($node, $field, &$items, $teaser, $page) {
   return array($field['field_name'] => $items);
 }
 
-
+/**
+ * Implementation of CCK's hook_field($op = 'validate').
+ */
 function _eventbrite_cck_field_validate(&$node, $field, &$items, $teaser, $page) {
   // Do validation on the field values here. The widget
   // will do its own validation and you cannot make any
@@ -251,7 +267,9 @@ function _eventbrite_cck_field_validate(&$node, $field, &$items, $teaser, $page)
   return $items;
 }
 
-// This is where you make sure that user-provided data is sanitized before being displayed.
+/**
+ * Implementation of CCK's hook_field($op = 'sanitize').
+ */
 function _eventbrite_cck_field_sanitize(&$node, $field, &$items, $teaser, $page) {
   // Get the 'data' column stored by CCK into an array. This is necessary
   // for Views, which doesn't call the "load" $op and to fix an issue with
@@ -292,36 +310,28 @@ function _eventbrite_cck_field_sanitize(&$node, $field, &$items, $teaser, $page)
   }
 }
 
+/**
+ * Implementation of CCK's hook_field($op = 'presave').
+ */
 function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) {
   if (is_array($items) && !empty($items)) {
+  	// Loop through multiple form values
     foreach ($items as $delta => $item) {
       // If the field is empty just skip, wasn't filled in, that is valid
       if (eventbrite_cck_content_is_empty($item, $field)) {
         continue;
       }
-
       $new_event = NULL;
 
       // If user either has no permissions or if it's a new field and user is pulling from EB
       if (!$field['allow_create_edit'] || $item['eventbrite_new'] == 'load') {
         // TODO: ops for load
         if ($item['load_ebid']) {
-          /*
-          if ($item['ebid'] && ($item['ebid'] != $item['load_ebid'])) {
-            // User has changed this to another event!
-          }
-          */
+          // TODO: Possibly check here if the event id has changed (probably we should refresh the event either way)
+          // if ($item['ebid'] && ($item['ebid'] != $item['load_ebid'])) {
 
-          if ($new_event = eventbrite_get('event_get', $item['load_ebid'])) {
-            // yay new event was pulled, now we just have to stuff the values in
-          }
-          else {
-            // Could not load that new event from the Eventbrite server
-            drupal_set_message('Could not load that event from the eventbrite server', 'error');
-            drupal_set_message('This field could not be updated on the eventbrite server', 'error');
-            // at this point not sure what we should do...maybe just leave the field as is
-            // if we do not explicitly change the ebid then nothing should matter
-          }
+          $new_event_id = $item['load_ebid'];
+
         }
         else {
           drupal_set_message('Error, this field should not have been validated to this point.', 'error');
@@ -338,17 +348,6 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
           if ($new_event_id = eventbrite_save('event_update', $event)) {
             drupal_set_message(t('This event was successfully updated on the Eventbrite server. '));
 
-            // TODO: merge this with load operation
-            if ($new_event = eventbrite_get('event_get', $new_event_id)) {
-              // yay new event was pulled, now we just have to stuff the values in
-            }
-            else {
-              // Could not load that new event from the Eventbrite server
-              drupal_set_message('Could not load that event from the Eventbrite server', 'error');
-              drupal_set_message('This field could not be updated on the Eventbrite server', 'error');
-              // at this point not sure what we should do...maybe just leave the field as is
-              // if we do not explicitly change the ebid then nothing should matter
-            }
           }
           else {
             // Save request could not be completed
@@ -366,18 +365,6 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
           // There is no ebid, which means the event needs to be created
           if ($new_event_id = eventbrite_save('event_new', $event)) {
             drupal_set_message(t('The new event was successfully created on the Eventbrite server. '));
-
-            // TODO: merge this with load operation
-            if ($new_event = eventbrite_get('event_get', $new_event_id)) {
-              // yay new event was pulled, now we just have to stuff the values in
-            }
-            else {
-              // Could not load that new event from the Eventbrite server
-              drupal_set_message('Could not load that event from the eventbrite server', 'error');
-              drupal_set_message('This field could not be updated on the eventbrite server', 'error');
-              // at this point not sure what we should do...maybe just leave the field as is
-              // if we do not explicitly change the ebid then nothing should matter
-            }
           }
           else {
             // Create request could not be completed
@@ -387,75 +374,131 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
         }
       }
 
-      if (isset($new_event)) {
+      // Get fresh event data from the server, whether the event was loaded, updated, or created      
+      if ($new_event = eventbrite_get('event_get', $new_event_id)) {
+      	// Update field values with values from the Eventbrite server
         $items[$delta]['ebid'] = $new_event->id;
         $items[$delta]['title'] = $new_event->title;
         $items[$delta]['status'] = $new_event->status;
         $items[$delta]['description'] = $new_event->description;
         $items[$delta]['start_date'] = $new_event->start_date;
         $items[$delta]['end_date'] = $new_event->end_date;
-
-        // TODO: translate timezone value to offset, this will not do:
-        //       Time zone comes in as 'GMT-08'
-        // These decprecated timezones are now usable and will be shoved into the selectbox
+        // TODO: These timezones coming from Eventbrite server are DEPRECATED & will not work in D7
         $items[$delta]['timezone'] = $new_event->timezone;
+      	
+        // Update the ticket settings
+        // TODO: Allow for multiple ticket processing
+        _eventbrite_cck_field_presave_ticket($items[$delta]['tickets'][0], $new_event, $item[load_ebid]);
+
+        // Update the payment settings
+        _eventbrite_cck_field_presave_payment_settings($items[$delta]['payment'], $new_event, $item[load_ebid]);
       }
-
-      //------------------------------------------------------------
-      // Process and Save the Ticket
-      //------------------------------------------------------------
-      // Hopefully we won't have to do this, if there is an error with event submission then we should keep looping the form (?)
-      // TODO: add continue loop on event error
-      if (isset($new_event)) {
-        // TODO: Do a check first to see if this ticket should be touched at all
-        if ($item['tickets'][0]['ticket_toggle']) {
-          // We only need to make this API call if user has changed ticket info
-          $ticket = _eventbrite_cck_populate_ticket_from_form($item);
-
-          // If this ticket has already been created
-          if (isset($ticket->id)) {
-            // There is a ticket id, which means that an edit/update needs to happen
-            if ($ticket_id = eventbrite_save('ticket_update', $ticket)) {
-              drupal_set_message(t('This ticket was successfully updated on the Eventbrite server'));
-            }
-            else {
-              // Save request could not be completed
-              // TODO: clear the ticket values--the event has now been submitted
-              if ($errors = eventbrite_errors()) {
-                foreach ($errors as $error_type => $error_msg) {
-                  drupal_set_message($error_type .': '. $error_msg, 'error');
-                }
-              }
-              drupal_set_message('Could not update the ticket', 'error');
-            }
-          }
-          else {
-            // There is no ticket id, which means ticket needs to be created
-            $ticket->event_id = $new_event->id;
-
-            if ($ticket_id = eventbrite_save('ticket_new', $ticket)) {
-              drupal_set_message(t('The new ticket was successfully created on the Eventbrite server.'));
-
-              // Set ticket id in item that will be saved to DB
-              // TODO: Figure these fields out
-              // Other ticket fields will be autosaved in tickets
-              $items[$delta]['tickets'][0]['ticket_id'] = $ticket_id;
-            }
-            else {
-              // TODO: set a form error here so that the field does not validate (rather than dsm())
-              // TODO: clear ticket values or something
-              drupal_set_message('Could not create the ticket', 'error');
-            }
-          }
-          // The call to create/update ticket just returns ticket id w/ confirmation
-          //   And Eventbrite does not have a get ticket API call yet
-          //   So nothing to stuff back into the database
-        }
+      else {
+        // Could not load that new event from the Eventbrite server
+        drupal_set_message('Could not load that event from the eventbrite server', 'error');
+        drupal_set_message('This field could not be updated on the eventbrite server', 'error');
+        // at this point not sure what we should do...maybe just leave the field as is
+        // if we do not explicitly change the ebid then nothing should matter
       }
     }
   }
 }
 
+
+
+/*
+ * This function massages the payment setting before the ticket is saved on the EB server and in the DB
+ */
+function _eventbrite_cck_field_presave_ticket(&$ticket_item, $event, $load_ebid = 0) {
+  if ($ticket_item['ticket_toggle']) {
+    // We only need to make this API call if user has changed ticket info
+    $ticket = _eventbrite_cck_populate_ticket_from_form($ticket_item);
+
+    // If this ticket has already been created
+    if (isset($ticket->id)) {
+      // There is a ticket id, which means that an edit/update needs to happen
+      if ($ticket_id = eventbrite_save('ticket_update', $ticket)) {
+        drupal_set_message(t('This ticket was successfully updated on the Eventbrite server'));
+      }
+      else {
+        // Save request could not be completed
+        // TODO: clear the ticket values--the event has not been submitted
+        if ($errors = eventbrite_errors()) {
+          foreach ($errors as $error_type => $error_msg) {
+            drupal_set_message($error_type .': '. $error_msg, 'error');
+          }
+        }
+        drupal_set_message('Could not update the ticket', 'error');
+      }
+    }
+    else {
+      // There is no ticket id, which means ticket needs to be created
+      $ticket->event_id = $event->id;
+
+      if ($ticket_id = eventbrite_save('ticket_new', $ticket)) {
+        drupal_set_message(t('The new ticket was successfully created on the Eventbrite server.'));
+
+        // Set ticket id in item that will be saved to DB
+        // TODO: Figure these fields out
+        // Other ticket fields will be autosaved in tickets
+        $ticket_item['ticket_id'] = $ticket_id;
+      }
+      else {
+        // TODO: set a form error here so that the field does not validate (rather than dsm())
+        // TODO: clear ticket values or something
+        drupal_set_message('Could not create the ticket', 'error');
+      }
+    }
+    // The call to create/update ticket just returns ticket id w/ confirmation
+    //   And Eventbrite does not have a get ticket API call yet, so nothing to stuff back into the database
+  }
+}
+
+/*
+ * This function massages the payment setting before the event is saved on the EB server and in the DB
+ */
+function _eventbrite_cck_field_presave_payment_settings(&$payment_item, $event, $load_ebid = 0) {
+  if ($payment_item['payment_toggle']) {
+    // We only need to make this API call if user has changed payment settings info
+    $payment_settings = _eventbrite_cck_populate_payment_settings_from_form($payment_item);
+    $payment_settings->event_id = $event->id;
+
+    if ($message = eventbrite_save('payment_update', $payment_settings)) {
+      drupal_set_message(t('The payment settings were successfully saved on the Eventbrite server: !method', array('!method' => $message)));
+    }
+    else {
+      // Save request could not be completed
+      // TODO: Payment settings were not saved...what should we do here?
+      if ($errors = eventbrite_errors()) {
+        foreach ($errors as $error_type => $error_msg) {
+          drupal_set_message($error_type .': '. $error_msg, 'error');
+        }
+      }
+      drupal_set_message('Could not update the payment settings on the Eventbrite server', 'error');
+    }          	
+  }
+  else {
+    // TODO: Payment settings for loaded events need to be editable
+    
+  	// This is load_ebid field within payment is a temporary fix to mark payment settings that we don't know
+    // The payment settings form does not get built so payment just goes into the DB with load_ebid
+    if ($load_ebid) {
+      $payment_item = array(
+        'load_ebid' => $load_ebid,
+      );
+    }
+
+    // Check if empty flag is set--if it is, then clear these form values before saving
+    if (isset($payment_item['payment_empty'])) {
+      // These payment settings should be empty, so clear form values (which are just the defaults) before save
+      $payment_item = array();
+    }
+  }
+}
+
+/*
+ * This function pulls event info from the form results and builds an event object for base Eventbrite module
+ */
 function _eventbrite_cck_populate_event_from_form($item) {
   $event = new stdClass();
 
@@ -469,34 +512,31 @@ function _eventbrite_cck_populate_event_from_form($item) {
   $event->start_date = $item['start_date'];
   $event->end_date = $item['end_date'];
 
-  // Calculate timezone and offset
-  //  $event->timezone = $item['timezone'];
-//  if ($item['ebid']) {
-//    $event->timezone = $item['timezone'];
-//  }
-//  else {
-    $start_date = date_create($item['start_date'], timezone_open($item['timezone']));
-    $event->tz_offset = $start_date->getOffset() / 3600;
-    $event->timezone = eventbrite_timezone_offset($event->tz_offset);
-    //  }
+  $start_date = date_create($item['start_date'], timezone_open($item['timezone']));
+  $event->tz_offset = $start_date->getOffset() / 3600;
+  $event->timezone = eventbrite_timezone_offset($event->tz_offset);
+
   return $event;
 }
 
+/*
+ * This function pulls ticket info from the form results and builds a ticket object for base Eventbrite module
+ */
 function _eventbrite_cck_populate_ticket_from_form($item) {
   $ticket = new stdClass();
 
   // Add ticket data to request
-  if (isset($item['tickets'][0]['ticket_id'])) {
-    $ticket->id = $item['tickets'][0]['ticket_id'];
+  if (isset($item['ticket_id'])) {
+    $ticket->id = $item['ticket_id'];
   }
-  $ticket->name = $item['tickets'][0]['ticket_name'];
-  $ticket->quantity = $item['tickets'][0]['quantity'];
-  if (!empty($item['tickets'][0]['ticket_description'])) {
-    $ticket->description = $item['tickets'][0]['ticket_description'];
+  $ticket->name = $item['ticket_name'];
+  $ticket->quantity = $item['quantity'];
+  if (!empty($item['ticket_description'])) {
+    $ticket->description = $item['ticket_description'];
   }
-  switch ($item['tickets'][0]['ticket_type']) {
+  switch ($item['ticket_type']) {
     case 'fixed':
-      $ticket->price = $item['tickets'][0]['price'];
+      $ticket->price = $item['price'];
       $ticket->is_donation = 0;
       break;
     case 'free':
@@ -508,9 +548,30 @@ function _eventbrite_cck_populate_ticket_from_form($item) {
       $ticket->is_donation = 1;
       break;
     default:
-      $ticket->price = $item['tickets'][0]['price'];
+      $ticket->price = $item['price'];
       $ticket->is_donation = 0;
       break;
   }
   return $ticket;
+}
+
+/*
+ * This function pulls payment settings info from the form results and builds a payment settings object for base Eventbrite module
+ */
+function _eventbrite_cck_populate_payment_settings_from_form($item) {
+  $payment = new stdClass();
+
+  $payment->accept_paypal = isset($item['accept_paypal']) ? 1 : 0;
+  $payment->paypal_email = $item['paypal_email'];
+  $payment->accept_google = isset($item['accept_google']) ? 1 : 0;
+  $payment->google_merchant_id = $item['google_merchant_id'];
+  $payment->google_merchant_key = $item['google_merchant_key'];
+  $payment->accept_check = isset($item['accept_check']) ? 1 : 0;
+  $payment->instructions_check = $item['instructions_check'];
+  $payment->accept_cash = isset($item['accept_cash']) ? 1 : 0;
+  $payment->instructions_cash = $item['instructions_cash'];
+  $payment->accept_invoice = isset($item['accept_invoice']) ? 1 : 0;
+  $payment->instructions_invoice = $item['instructions_invoice'];
+
+  return $payment;
 }

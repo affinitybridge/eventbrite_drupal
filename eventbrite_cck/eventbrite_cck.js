@@ -1,5 +1,5 @@
 Drupal.behaviors.eventBrite = function (context) {
-  // Toggle between load event and create event
+  // This is delicate and took forever to get working
   $('input.eventbrite_cck-new-toggle').click(function() {
     if ($(this).attr('value') == 'load' ) {
       $('fieldset.eventbrite_cck-new-load').show();
@@ -10,16 +10,25 @@ Drupal.behaviors.eventBrite = function (context) {
       $('fieldset.eventbrite_cck-new-create').show();
     }
   });
+	 
+  if ($('input:checked.eventbrite_cck-new-toggle').val() != 'load') {
+    $('fieldset.eventbrite_cck-new-load').hide();
+  }
+  if ($('input:checked.eventbrite_cck-new-toggle').val() != 'create') {
+    $('fieldset.eventbrite_cck-new-create').hide();
+  }
+ 
+	 
+  // On submit, re-enable all disabled fields so that values get submitted
+  $('#edit-submit').click(function() {
+    disableTicketFields(false);
+    reEnablePaymentFields();
+  });
   
   // Set ticket input fields to disabled (readonly does not work for some field elements)
   //   If ticket update does not get checked these fields will get re-enabled on node submit
   disableTicketFields(true);
   $('input.eventbrite_cck-ticket-toggle').attr('disabled', false);
-  
-  // On submit, re-enable all disabled fields so that values get submitted
-  $('#edit-submit').click(function() {
-    disableTicketFields(false);
-  });
   
   // Trying to toggle whether ticket fields are editable
   $('input.eventbrite_cck-ticket-toggle').click(function() {
@@ -31,5 +40,37 @@ Drupal.behaviors.eventBrite = function (context) {
     $('input.eventbrite_cck-ticket-input').attr('disabled', $disabled);
     $('textarea.eventbrite_cck-ticket-input').attr('disabled', $disabled);
     $('input.eventbrite_cck-ticket-toggle').attr('disabled', $disabled);
+  }
+
+  
+  // Set payment input fields to disabled (readonly does not work for some field elements)
+  //   If payment update does not get checked these fields will get re-enabled on node submit
+  updatePaymentFields();
+  
+  // Trying to toggle whether payment fields are editable
+  $('input.eventbrite_cck-payment-toggle').click(function() {
+    updatePaymentFields();
+  });
+
+  function reEnablePaymentFields() {
+	$('input.eventbrite_cck-payment-toggle').attr('disabled', false);    
+  }
+  function updatePaymentFields() {
+    if ($('input.eventbrite_cck-payment-toggle').attr('checked')) {
+      $('input.eventbrite-payment-settings').parent().css('display', 'block');
+      $('input.eventbrite-payment-settings').attr('disabled', false);
+      $('input.eventbrite_cck-payment-toggle').attr('disabled', 'disabled');
+    }
+    else {
+      if ($('input.eventbrite_cck-payment-empty').length) {
+        // Hide payment settings if none have been created
+        $('input.eventbrite-payment-settings').parent().css('display', 'none');
+      }
+      else {
+        // Disable payment settings if they have been created
+        $('input.eventbrite-payment-settings').attr('disabled', 'disabled');
+      }
+      $('input.eventbrite_cck-payment-toggle').attr('disabled', false);
+    }
   }
 };
