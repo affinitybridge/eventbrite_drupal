@@ -32,8 +32,43 @@ function eventbrite_menu() {
     'access arguments' => array('administer site configuration'),
     'file' => 'eventbrite.payment.inc',
     'type' => MENU_LOCAL_TASK,
+    'weight' => 5,
   );
 
+  $items['admin/settings/eventbrite/add-venue'] = array(
+    'title' => 'Add Venue',
+    'description' => 'Add an Eventbrite venue',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_venue'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer eventbrite settings'),
+    'file' => 'eventbrite.venue.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 4,
+  );
+  $items['admin/settings/eventbrite/list-venues'] = array(
+    'title' => 'List Venues',
+    'description' => 'List Eventbrite venues',
+    'page callback' => 'eventbrite_venue_list',
+//    'page arguments' => array('eventbrite_admin_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer eventbrite settings'),
+    'file' => 'eventbrite.venue.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+  );
+  $items['admin/settings/eventbrite/list-venues/%'] = array(
+    'title' => 'Edit Venue',
+    'description' => 'Edit an Eventbrite venue',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('eventbrite_venue', 4),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer eventbrite settings'),
+    'file' => 'eventbrite.venue.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 3,
+  );
+  
   return $items;
 }
 
@@ -52,6 +87,8 @@ function eventbrite_get($op, $id = NULL) {
   switch ($op) {
     case 'user_list_events':
       return _eventbrite_api_get_events();
+    case 'user_list_venues':
+      return _eventbrite_api_get_venues();
     case 'event_get':
       if ($id) {
         return _eventbrite_api_get_event($id);
@@ -74,7 +111,6 @@ function eventbrite_save($op, $object) {
     case 'event_new':
       return _eventbrite_api_event_new($object);
     case 'event_update':
-    	drupal_set_message('in eeventbrite_save');
       return _eventbrite_api_event_update($object);
     case 'payment_update':
       return _eventbrite_api_payment_update($object);

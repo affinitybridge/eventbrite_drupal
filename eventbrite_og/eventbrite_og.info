@@ -5,6 +5,7 @@ version = "6.x-2.x-dev"
 core = 6.x
 package = Eventbrite
 
+dependencies[] = content
 dependencies[] = eventbrite
-dependencies[] = eventbrite_ui
+dependencies[] = eventbrite_cck
 dependencies[] = og

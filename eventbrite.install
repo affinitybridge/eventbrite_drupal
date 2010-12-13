@@ -41,6 +41,84 @@ function eventbrite_schema() {
     'primary key' => array('op', 'id', 'query_string'),
   );
 
+  $schema['eventbrite_venue'] = array(
+    'fields' => array(
+      'user_key' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => FALSE,
+      ),
+      'module' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => FALSE,
+      ),
+      'venue_id' => array(
+        'description'     => "The Eventbrite venue id.",
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => TRUE,
+      ),
+      'organizer_id' => array(
+        'description'     => "The Eventbrite organizer id.",
+        'type'            => 'int',
+        'size'            => 'normal',
+        'not null'        => FALSE,
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => FALSE,
+      ),
+      'address' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => FALSE,
+      ),
+      'address2' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => FALSE,
+      ),
+      'city' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => FALSE,
+      ),
+      'region' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => FALSE,
+      ),
+      'postal_code' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => FALSE,
+      ),
+      'country' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => FALSE,
+      ),
+      'country_code' => array(
+        'type' => 'varchar',
+        'length' => 2,
+        'not null' => FALSE,
+      ),
+      'longitude' => array(
+        'type' => 'float',
+        'not null' => FALSE,
+      ),
+      'latitude' => array(
+        'type' => 'float',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('user_key', 'venue_id'),
+    'unique keys' => array('modules' => array('module', 'user_key', 'venue_id')),
+  );
+  
+
   return $schema;
 }
 

@@ -18,6 +18,7 @@ function _eventbrite_common_new_request($op, $op_type) {
   $request->allowed_cache = ($op == 'get') ? 60 * variable_get('eventbrite_cache_minimum', 5) : 0;
   $request->user_key = variable_get('eventbrite_user_key', '');
   $request->params = array();
+  $request->module = 'eventbrite';
 
   if ($request->user_key) {
     return $request;
@@ -66,36 +67,44 @@ function _eventbrite_common_process_request($request) {
         $result->object = simplexml_load_string($result->data);
         $result->source = 'cache';
         $result->updated = FALSE;
+        $result->module = $request->module;
+        $result->user_key = $request->user_key;
+        
         return $result;
       }
     }
   }
+
   // Send HTTP request to the server - since we don't have fresh data
   if ($result = drupal_http_request(EVENTBRITE_SERVER . $request->op .'?'. $request->query_string) ) {
+    $result->module = $request->module;
+    $result->user_key = $request->user_key;
+  	
     // Process the result if there was one, and return simplexml_load_string($result->data)
     if (_eventbrite_common_process_result($result)) {
       $result->source = 'server';
 
       // If this was a get operation then cache the results
-      if ($request->op_type == 'get' && $request->allowed_cache) {
-        if (isset($cached_result)) {
-          // There was already a cached result, so we'll need to update the cache
-          if (strcmp($cached_result->result, $result->data)) {
-            // XML data returned has been updated, flag it so that other modules can refresh data
-            $result->updated = TRUE;
+      if ($request->op_type == 'get') {
+        $result->updated = TRUE;
+      	if ($request->allowed_cache) {
+          if (isset($cached_result)) {
+            // There was already a cached result, so we'll need to update the cache
+            if (strcmp($cached_result->result, $result->data)) {
+              // XML return is different from the cache, return previous cached string for comparison
+              $result->prev_cache = $cached_result->result;
+            }
+            else {
+              // XML data returned is the same, just update the timestamp
+              $result->updated = FALSE;
+            }
+            // Same update call whether result from server has changed or not
+            _eventbrite_common_cache_result($result->data, $request, 'update');
           }
           else {
-            // XML data returned is the same, just update the timestamp
-            $result->updated = FALSE;
+        	// There was no cached result, so we'll need to insert into the cache
+            _eventbrite_common_cache_result($result->data, $request, 'insert');
           }
-          // Same update call whether result from server has changed or not
-          _eventbrite_common_cache_result($result->data, $request, 'update');
-        }
-        else {
-          // There was no cached result, so we'll need to insert into the cache
-          // And flag the data as new for other modules to save it
-          $result->updated = TRUE;
-          _eventbrite_common_cache_result($result->data, $request, 'insert');
         }
       }
 

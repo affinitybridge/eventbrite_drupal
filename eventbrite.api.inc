@@ -28,6 +28,39 @@ function _eventbrite_api_get_events() {
 }
 
 /*
+ * This function fetches the user's list of venues from Eventbrite
+ */
+function _eventbrite_api_get_venues() {
+  // Pull in venue handling functions
+  module_load_include('inc', 'eventbrite', 'eventbrite.venue');
+
+  // Build a new request object
+  $request = _eventbrite_common_new_request('user_list_venues', 'get');
+drupal_set_message('s');
+  if ($result = _eventbrite_common_process_request($request)) {
+    $xml_object = $result->object;
+    $venues = array();
+//    print_r($result);exit(5);
+    foreach ($xml_object as $key => $xml_event) {
+      if ($key == 'venue' && $venue = _eventbrite_api_populate_venue($xml_event)) {
+        $venues[$venue->venue_id] = $venue;
+        
+        // If $result->updated then these venues should be saved to the DB
+        // TODO: Look at $result->prev_cache to see if each specific venue has changed before resaving
+        if ($result->updated) {
+        	drupal_set_message('here');
+          $venue->user_key = $result->user_key;
+          $venue->module = $result->module;
+          
+          eventbrite_venue_save($venue);
+        }
+      }
+    }
+    return $venues;
+  }
+}
+
+/*
  * This function fetches one user by user key
  */
 function _eventbrite_api_get_user($user_key) {
@@ -70,9 +103,24 @@ function _eventbrite_api_populate_event($event_data) {
   $event->description = (string)$event_data->description;
   $event->start_date = (string)$event_data->start_date;
   $event->end_date = (string)$event_data->end_date;
-  $event->timezone = $yar = (string)$event_data->timezone;
+  $event->timezone = (string)$event_data->timezone;
 
   return $event;
+}
+
+function _eventbrite_api_populate_venue($venue_data) {
+  $venue = new stdClass();
+  $venue->venue_id = (integer)$venue_data->id;
+  $venue->name = (string)$venue_data->name;
+  $venue->address = (string)$venue_data->address;
+  $venue->city = (string)$venue_data->city;
+  $venue->region = (string)$venue_data->region;
+  $venue->country = (string)$venue_data->country;
+  $venue->country_code = (string)$venue_data->country_code;
+  $venue->longitude = (string)$venue_data->longitude;
+  $venue->latitude = (string)$venue_data->latitude;
+  
+  return $venue;
 }
 
 function _eventbrite_api_event_new($event) {

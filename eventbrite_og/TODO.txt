@@ -1,0 +1,10 @@
+eventbrite_og.module:    // TODO: Add group name to title field
+eventbrite_og.module:    // TODO: Add group admin check for permissions
+eventbrite_og.module:    // TODO: Add group name to title field
+eventbrite_og.module:    // TODO: Add group admin check for permissions
+eventbrite_og.module:    // TODO: Add group name to title field
+eventbrite_og.module:// TODO: This may not need to be in its own function after all, only call is in hook_nodeapi() load op
+eventbrite_og.module:        // TODO: Where is this email going to come from?
+eventbrite_og.module:        // TODO: Remove example.com, this is here so that it can be run locally
+eventbrite_og.module:  // TODO: check if this is group admin
+eventbrite_og.module:  // TODO: check if the right setting is enabled in the eventbrite group
