@@ -95,11 +95,23 @@ function eventbrite_get($op, $id = NULL) {
       }
       break;
     case 'user_get':
+      // This will ge the master user
+      return _eventbrite_api_get_user();
+    case 'user_get_by_email':
       if ($id) {
-        return _eventbrite_api_get_user($id);
+        return _eventbrite_api_get_user($id, 'email');
+      }
+    case 'user_get_by_id':
+      if ($id) {
+        return _eventbrite_api_get_user($id, 'user_id');
       }
       break;
-    }
+    case 'user_get_by_key':
+      if ($id) {
+        return _eventbrite_api_get_user($id, 'user_key');
+      }
+      break;
+  }
 }
 
 /*

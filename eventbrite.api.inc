@@ -63,19 +63,25 @@ drupal_set_message('s');
 /*
  * This function fetches one user by user key
  */
-function _eventbrite_api_get_user($user_key) {
+function _eventbrite_api_get_user($user_key = '', $key_type = '') {
+	drupal_set_message('calling get_user with user_key '. $user_key .' and key_type '. $key_type);
+	
   // Build a new request object
   $request = _eventbrite_common_new_request('user_get', 'get');
+  
+  if (isset($user_key)) {
+  	$request->$key_type = $user_key;
+  }
 
-  $request->user_key = $user_key;
+//  $request->user_key = $user_key;
 
   if ($result = _eventbrite_common_process_request($request)) {
     $xml_object = $result->object;
     // Just checking if a user id was returned, no need to do anything beyond that
     // Eventbrite API returns user_id, even though documentation says it returns id
     // TODO: write a populate user function much like _eventbrite_api_populate_event()
-    if ($subuser_id = (integer)$xml_object->user_id) {
-      return $subuser_id;
+    if ($user = _eventbrite_api_populate_user($xml_object)) {
+      return $eb_user;
     }
   }
 }
@@ -104,6 +110,29 @@ function _eventbrite_api_populate_event($event_data) {
   $event->start_date = (string)$event_data->start_date;
   $event->end_date = (string)$event_data->end_date;
   $event->timezone = (string)$event_data->timezone;
+
+  return $event;
+}
+
+function _eventbrite_api_populate_user($user_data) {
+  $eb_user = new stdClass();
+  $eb_user->user_id = (integer)$user_data->user_id;
+  $eb_user->user_key = (string)$user_key->title;
+  $eb_user->email = (string)$user_data->email;
+  if (isset($user_data->subusers)) {
+  	drupal_set_message('WE HAEV SUB USERS!!!!!!!');
+  	$eb_user->subusers = array();
+  	foreach ($user_data->subusers as $subuser) {
+  	  $eb_subuser = new stdClass();
+  	  // TODO: this might just be id rather than user_id
+  	  $eb_subuser->user_id = (integer)$subuser->user_id;
+  	  $eb_subuser->email = (string)$subuser->email;
+  	  $eb_user->subusers[] = $eb_subuser;
+  	}
+  }
+  $eb_user->start_date = (string)$user_data->start_date;
+  $eb_user->end_date = (string)$user_data->end_date;
+  $eb_user->timezone = (string)$user_data->timezone;
 
   return $event;
 }

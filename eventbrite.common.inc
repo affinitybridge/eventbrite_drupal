@@ -41,7 +41,17 @@ function _eventbrite_common_process_request($request) {
   }
 
   // Invoke hook_eventbrite_request_alter for sub modules to make changes
-  module_invoke_all('eventbrite_request_alter', $request);
+  // Do not invoke for user_get calls, user_get should never be altered
+  switch ($request->op) {
+  	case 'user_get':
+  	case 'user_get_by_id':
+  	case 'user_get_by_email':
+  	case 'user_get_by_key':
+  	  break;
+  	default:
+      module_invoke_all('eventbrite_request_alter', $request);
+      break;
+  }
   
   // Build query string from $request object
   $request->id = isset($request->params['id']) ? $request->params['id'] : 0;
