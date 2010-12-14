@@ -20,7 +20,7 @@ function eventbrite_og_schema() {
         'size'            => 'normal',
         'not null'        => TRUE,
       ),
-      'account' => array(
+      'account_type' => array(
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
@@ -29,26 +29,13 @@ function eventbrite_og_schema() {
         'type' => 'varchar',
         'length' => 32,
         'not null' => FALSE,
-      ),
-      'subuser_id' => array(
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => FALSE,
+        'default' => '',
       ),
       'subuser_email' => array(
         'type' => 'varchar',
         'length' => 64,
         'not null' => FALSE,
-      ),
-      'subuser_password' => array(
-        'type' => 'varchar',
-        'length' => 8,
-        'not null' => FALSE,
-      ),
-      'subuser_key' => array(
-        'type' => 'varchar',
-        'length' => 32,
-        'not null' => FALSE,
+        'default' => '',
       ),
     ),
     'primary key' => array('nid'),
