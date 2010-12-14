@@ -163,24 +163,32 @@ function eventbrite_og_form_node_type_form_alter(&$form, &$form_state) {
 
 function eventbrite_og_node_type_form_submit($form, &$form_state) {
   $form_values = $form_state['values'];
-  variable_set('eventbrite_og_'.$form_values['type'], array_values($form_values['eventbrite_og']));
+//  print_r($form_values['eventbrite_og']);
+  variable_set('eventbrite_og_'.$form_values['type'], $form_values['eventbrite_og']);
 }
 
 function eventbrite_og_get_account_options($type) {
   $account_options = array();
-  $allowed_options = variable_get('eventbrite_og_'.$type, array());
-  if (!empty($allowed_options)) {
+  
+  if ($allowed_options = variable_get('eventbrite_og_'.$type, array())) {
   	$account_options[EVENTBRITE_OG_DISABLED] = t('Do not enable event management for this group');
+//  	print_r($allowed_options);exit(4);
   	if (module_exists('eventbrite_subuser')) {
-      if (in_array(EVENTBRITE_OG_SUBUSER, $allowed_options)) {
-        $account_options[EVENTBRITE_OG_SUBUSER] = t('Create a subuser account under the site\' Eventbrite account');
+//  		drupal_set_message();
+      if ($allowed_options[EVENTBRITE_OG_SUBUSER]) {
+  	    $account_options[EVENTBRITE_OG_SUBUSER] = t('Create a subuser account under the site\' Eventbrite account');
       }
     }
-    if (in_array(EVENTBRITE_OG_CUSTOM, $allowed_options)) {
+    if ($allowed_options[EVENTBRITE_OG_CUSTOM]) {
+//      print EVENTBRITE_OG_CUSTOM.' ';
+    	//print_r($allowed_options);exit(5);
+    	//drupal_set_message('wtf?');
       $account_options[EVENTBRITE_OG_CUSTOM] = t('Enter an Eventbrite user key to use as the Eventbrite account');
     }
-    if (in_array(EVENTBRITE_OG_INHERIT, $allowed_options)) {
-      $account_options[EVENTBRITE_OG_INHERIT] = t('Use the site Eventbrite user key');
+    if ($allowed_options[EVENTBRITE_OG_INHERIT]) {
+//    if (in_array(EVENTBRITE_OG_INHERIT, $allowed_options)) {
+//    	drupal_set_message('wtf?');
+    	$account_options[EVENTBRITE_OG_INHERIT] = t('Use the site Eventbrite user key');
     }
   }
 
@@ -251,6 +259,7 @@ function eventbrite_og_group_node_validate($form, &$form_state) {
    	  }
   	  break;
   	case EVENTBRITE_OG_SUBUSER:
+  		drupal_set_message('validating subuser stuff');
   	  if (empty($form_values['subuser_email'])) {
         form_set_error('subuser_email', t('You must enter an email account for subuser account creation.'));
   	    return;
@@ -266,25 +275,29 @@ function eventbrite_og_group_node_validate($form, &$form_state) {
 function _eventbrite_og_group_submit($node) {
   $eventbrite_og = array(
     'nid' => $node->nid,
-    'account_type' => $node->eventbrite_og->account_type,
+    'account_type' => $node->account_type,
   );
-
   // Switch on Group account types
   switch ($eventbrite_og['account_type']) {
   	case EVENTBRITE_OG_SUBUSER:
+  		drupal_set_message('submitting subuser stuff');
   	  if (module_exists('eventbrite_subuser')) {
         // If this group does not have a subuser created already then create one
-        if (eventbrite_subuser_get($node->eventbrite_og->subuser_email)) {
+        if (eventbrite_subuser_get($node->subuser_email)) {
+        	drupal_set_message('got the subuser');
           // A sub user with this email has already been created and is in the system
-          $eventbrite_og['subuser_email'] = $node->eventbrite_og->subuser_email;
+          $eventbrite_og['subuser_email'] = $node->subuser_email;
         }
         else {
-          // Create a new sub user with this email address
-          if (eventbrite_subuser_create($node->eventbrite_og->subuser_email, 'eventbrite_og')) {
-  	  	    drupal_set_message('A new sub account was created on Eventbrite for this group.');
-          	$eventbrite_og['subuser_email'] = $node->eventbrite_og->subuser_email;
+        	drupal_set_message('didnt got the subuser');
+        	// Create a new sub user with this email address
+          if (eventbrite_subuser_create($node->subuser_email, 'eventbrite_og')) {
+        	drupal_set_message('created the subuser');
+          	drupal_set_message('A new sub account was created on Eventbrite for this group.');
+          	$eventbrite_og['subuser_email'] = $node->subuser_email;
           }
           else {
+        	drupal_set_message('didnt create the subuser');
           	// Could not create the subuser
   	  	    drupal_set_message('A new sub account could not be created on Eventbrite.');
           	$eventbrite_og['subuser_email'] = '';
@@ -294,13 +307,14 @@ function _eventbrite_og_group_submit($node) {
         }  	  	
   	  }
   	  else {
+  	  	drupal_set_message('reset');
   	  	// If this module is not enabled then reset account_type
         $eventbrite_og['account_type'] = EVENTBRITE_OG_DISABLED;
    	  }
   	  break;
   	case EVENTBRITE_OG_CUSTOM:
   	  // This key will have been checked in the validation step
-  	  $eventbrite_og['custom_user_key'] = $node->eb_user_key;
+  	  $eventbrite_og['custom_user_key'] = $node->custom_user_key;
   	  break;
   }
 
