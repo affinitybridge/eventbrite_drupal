@@ -1,0 +1,9 @@
+; $Id$
+name = Eventbrite SubUser
+description = Allow for the creation of sub users.
+version = "6.x-2.x-dev"
+core = 6.x
+package = Eventbrite
+
+dependencies[] = eventbrite
+

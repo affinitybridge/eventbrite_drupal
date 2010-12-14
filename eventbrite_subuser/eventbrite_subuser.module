@@ -1,0 +1,97 @@
+<?php
+// $Id$
+
+/*
+ * Implementation of hook_menu().
+ */
+function eventbrite_subuser_menu() {
+
+  $items['admin/settings/eventbrite/subuser'] = array(
+    'title' => 'List Sub Users',
+    'description' => 'List sub-users created under the site\'s master Eventbrite account',
+    'page callback' => 'eventbrite_subuser_list',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer eventbrite settings'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 6,
+  );
+  
+  return $items;
+}
+
+function eventbrite_subuser_create($email, $module) {
+  $subuser = new stdClass();
+  $subuser->email = $email;
+  $subuser->module = $module;
+  $subuser->password = user_password(8);
+  
+  if ($new_subuser = eventbrite_save('user_new', $subuser)) {
+  	drupal_set_message('A new sub-user account was created on the Eventbrite server.');
+  	$subuser->user_id = $new_subuser->id;
+  	$subuser->user_key = $new_subuser->user_key;
+
+    drupal_write_record('eventbrite_subuser', $subuser);
+  }  
+}
+
+function eventbrite_subuser_refresh() {
+  if ($master_user = eventbrite_get('user_get')) {
+  	if (isset($master_user->subusers)) {
+  	  $subusers = array();
+  	  $result = db_query('SELECT * FROM {eventbrite_subuser}');
+  	  while ($row = db_fetch_object($result)) {
+  	  	$subusers[$row->subuser_id] = $row;
+  	  }
+  	  
+  	  // Loop through subusers list from server request to see if there are new subusers
+  	  foreach ($master_user->subusers as $new_subuser) {
+  	  	if (!isset($subusers[$new_subuser->user_id])) {
+  	  	  // TODO: get user key by doing a straight get on this user
+          drupal_write_record('eventbrite_subuser', $new_subuser);
+  	  	  $subusers[$new_subuser->user_id] = $new_subuser;
+  	  	}
+  	  }
+  	  // TODO: See if any have been deleted
+  	  return $subusers;
+  	}
+  	else {
+  	  // No subusers
+  	  // TODO: Truncate eventbrite_subuser table
+  	}
+  }
+}
+
+/*
+ * This function grabs the subuser by email.  Very simple.
+ */
+function eventbrite_subuser_get($email) {
+  $result = db_query('SELECT * FROM {eventbrite_subuser} WHERE email = "%d"');
+  if ($row = db_fetch_object($result)) {
+  	return $row;
+  }
+}
+
+function eventbrite_subuser_list() {
+  // TODO: Get venues from Eventbrite server
+  if ($subusers = eventbrite_subuser_refresh()) {
+    $header = array('Email', 'Password', 'User ID', 'User Key', 'Module');
+    $rows = array();
+    foreach ($subusers as $subuser) {
+      $rows[] = array(
+        $subuser->email,
+        $subuser->password,
+        $subuser->user_id,
+        $subuser->user_key,
+        $subuser->module,
+      );
+    }
+    return theme('table', $header, $rows);
+  }
+  
+  return t('There are currently no sub-users within the site\'s master Eventbrite account.');
+}
+
+
+function eventbrite_subuser_cron() {
+	eventbrite_subuser_refresh();
+}
