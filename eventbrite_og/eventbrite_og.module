@@ -193,9 +193,8 @@ function eventbrite_og_form_alter(&$form, &$form_state, $form_id) {
     if ($form_id == $node->type.'_node_form' && og_is_group_type($node->type)) {
       if (user_access('administer eventbrite group accounts')) {
         drupal_add_js(drupal_get_path('module', 'eventbrite_og')  .'/eventbrite_og.js', 'module');
-  	    $account_options = eventbrite_og_get_account_options($node->type);
-      
-        if ($account_options) {
+
+        if ($account_options = eventbrite_og_get_account_options($node->type)) {
           $form['eventbrite_og'] = array(
             '#type' => 'fieldset',
             '#title' => t('Eventbrite Settings'),
@@ -221,17 +220,18 @@ function eventbrite_og_form_alter(&$form, &$form_state, $form_id) {
             );
           }
 
-        if (isset($account_options[EVENTBRITE_OG_SUBUSER])) {
-          $form['eventbrite_og']['eb_subuser_email'] = array(
-            '#type' => 'textfield',
-            '#title' => t('Email address'),
-            '#description' => t('Email to use for the creation of Eventbrite sub user account.'),
-            '#default_value' => $node->eventbrite_og->subuser_email,
-            '#attributes' => array('class' => 'eventbrite_og-subuser-email'),
-          );
-        }
+          if (isset($account_options[EVENTBRITE_OG_SUBUSER])) {
+            $form['eventbrite_og']['eb_subuser_email'] = array(
+              '#type' => 'textfield',
+              '#title' => t('Email address'),
+              '#description' => t('Email to use for the creation of Eventbrite sub user account.'),
+              '#default_value' => $node->eventbrite_og->subuser_email,
+              '#attributes' => array('class' => 'eventbrite_og-subuser-email'),
+            );
+          }
 
-        $form['#validate'][] = 'eventbrite_og_group_node_validate';
+          $form['#validate'][] = 'eventbrite_og_group_node_validate';
+        }
       }
   	}
   }
