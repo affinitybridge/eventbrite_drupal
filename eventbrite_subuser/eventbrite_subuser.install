@@ -41,8 +41,8 @@ function eventbrite_subuser_schema() {
         'not null' => FALSE,
       ),
     ),
-    'primary key' => array('subuser_id'),
-    'unique keys' => array('email' => array('subuser_email')),
+    'primary key' => array('user_id'),
+    'unique keys' => array('email' => array('email')),
   );
   
   return $schema;
