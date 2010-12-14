@@ -69,7 +69,7 @@ function _eventbrite_api_get_user($user_key = '', $key_type = '') {
   // Build a new request object
   $request = _eventbrite_common_new_request('user_get', 'get');
   
-  if (isset($user_key)) {
+  if ($user_key) {
   	$request->$key_type = $user_key;
   }
 
