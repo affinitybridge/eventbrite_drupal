@@ -210,7 +210,7 @@ function eventbrite_og_form_alter(&$form, &$form_state, $form_id) {
           );
 
           if (isset($account_options[EVENTBRITE_OG_CUSTOM])) {
-            $form['eventbrite_og']['eb_user_key'] = array(
+            $form['eventbrite_og']['user_key'] = array(
               '#type' => 'textfield',
               '#title' => t('User key'),
               // TODO: get link for user key
@@ -221,7 +221,7 @@ function eventbrite_og_form_alter(&$form, &$form_state, $form_id) {
           }
 
           if (isset($account_options[EVENTBRITE_OG_SUBUSER])) {
-            $form['eventbrite_og']['eb_subuser_email'] = array(
+            $form['eventbrite_og']['subuser_email'] = array(
               '#type' => 'textfield',
               '#title' => t('Email address'),
               '#description' => t('Email to use for the creation of Eventbrite sub user account.'),
