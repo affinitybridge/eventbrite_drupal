@@ -103,12 +103,19 @@ function _eventbrite_cck_event_widget_process($element, $edit, &$form_state, $fo
     $fieldset_class = empty($ebid) ? 'eventbrite_cck-new-create ' : 'eventbrite_cck-new-edit ';
     
     $element['event_details'] = _eventbrite_cck_event_widget_process_details($element);
+    $element['event_details']['#attributes']['class'] = $fieldset_class;
     $element['when'] = _eventbrite_cck_event_widget_process_when($element);
-    $element['where'] = _eventbrite_cck_event_widget_process_where($element);
+    $element['when']['#attributes']['class'] = $fieldset_class;
+//    $element['where'] = _eventbrite_cck_event_widget_process_where($element);
     $element['tickets'] = _eventbrite_cck_event_widget_process_tickets($element);
+    $element['tickets']['#attributes']['class'] = $fieldset_class;
     $element['payment'] = _eventbrite_cck_event_widget_process_payment($element, $fieldset_class);
+    $element['payment']['#attributes']['class'] = $fieldset_class;
+    // TODO: Add discounts back in
+    /*
     $element['discounts'] = _eventbrite_cck_event_widget_process_discounts($element);
-
+    $element['discounts']['#attributes']['class'] = $fieldset_class;
+    */
     // Hide the select box unless this form is being shown again and it was selected
 
     // TODO: perhaps only show this chunk of the widget if the event is already created
@@ -147,9 +154,9 @@ function _eventbrite_cck_event_widget_process_details($element, $ebid = '') {
     '#weight' => -2,
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
-    '#attributes' => array(
-      'class' => 'eventbrite_cck-new-create',
-    ),
+//    '#attributes' => array(
+//      'class' => 'eventbrite_cck-new-create',
+//    ),
   );
 
   if (!empty($ebid)) {
@@ -187,6 +194,15 @@ function _eventbrite_cck_event_widget_process_details($element, $ebid = '') {
     '#parents' => array($field_name, $delta, 'status'),
   );
 
+  module_load_include('inc', 'eventbrite', 'eventbrite.venue');
+  $fieldset['venue_id'] = array(
+    '#type' => 'select',
+    '#title' => t('Venue'),
+    '#default_value' => isset($element['#value']['venue_id']) ? $element['#value']['venue_id'] : '',
+    '#options' => eventbrite_venue_options(),
+    '#parents' => array($field_name, $delta, 'venue_id'),
+  );
+  
   $fieldset['description'] = array(
     '#title' => t('Event Description'),
     '#type' => 'textarea',
@@ -226,35 +242,27 @@ function _eventbrite_cck_event_widget_process_when($element) {
   $default_start_datetime = $default_date .' '. '18:00';
   $default_end_datetime = $default_date .' '. '21:00';
 
+  // TODO: Add date_popup capability to dates
+  //    date_popup may need #date_titme field filled in on date elements- see date_elements.inc line 338
+  // $element['#date_float'] = TRUE;
+  // TODO: Massage timezone
+  // TODO: Add the variable filling in date_format to the settings page
+  
   $fieldset['start_date'] = array(
     '#title' => t('Event Starts'),
     '#field' => $field,
-    // TODO: Admins should be able to chose date_select or date_popup on field admin form
-    //       Right now we are assuming date_select everywhere
     '#type' => 'date_select',
     '#default_value' => isset($element['#value']['start_date']) ? $element['#value']['start_date'] : $default_start_datetime,
     '#weight' => 2,
     '#required' => 1,
     '#delta'         => $delta,
-    // TODO: #date_formet should not be coming from a variable, it should come from a value on field settings form
-    //       Not sure how to work granularity in like this code does:
-    //       '#date_format' => date_limit_format(date_input_format($element, $field), $field['granularity']),
     '#date_format' => variable_get('eventbrite_cck_default_date_format', 'F-d-Y h:iA'),
-    // TODO: Add something about #date_timezone
-//    '#date_timezone' => $element['#date_timezone'],
     '#date_text_parts'  => array(),
     '#date_increment'   => 5,
     '#date_year_range'  => '0:+1',
     '#date_label_position' => 'none',
     '#parents' => array($field_name, $delta, 'start_date'),
   );
-
-  // TODO: Add support for date_popup (not just date_select)
-  //    date_popup may need #date_titme field filled in on date elements- see date_elements.inc line 338
-
-  // This allows date elements to float on the same line
-  //   Must be for date_popup as it doesn't do anything with date_select
-  // $element['#date_float'] = TRUE;
 
   // Populate end date with start date values
   $fieldset['end_date'] = $fieldset['start_date'];
@@ -303,9 +311,9 @@ function _eventbrite_cck_event_widget_process_where($element) {
     '#weight' => 2,
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
-    '#attributes' => array(
-      'class' => 'eventbrite_cck-new-create eventbrite_cck-where',
-    ),
+//    '#attributes' => array(
+//      'class' => 'eventbrite_cck-new-create eventbrite_cck-where',
+//    ),
   );
 
   $fieldset['venue_info'] = array(
@@ -322,7 +330,9 @@ function _eventbrite_cck_event_widget_process_where($element) {
 function _eventbrite_cck_event_widget_process_tickets($element) {
   // TODO: Allow processing of more than one ticket
 
+  // Get field values for tickets, if they've been populated
   $element_values = isset($element['#value']['tickets'][0]) ? $element['#value']['tickets'][0] : array();
+
   $parents = array($element['#field_name'], $element['#delta'], 'tickets', 0);
   
   $ticket_id = isset($element_values['ticket_id']) ? $element_values['ticket_id'] : '';
@@ -333,9 +343,26 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
     '#weight' => 4,
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
-    '#attributes' => array('class' => 'eventbrite_cck-new-create'),
   );
 
+  // TODO: This is a bandaid since we don't have a way yet to edit tickets for events loaded from the server
+  if (isset($element_values['load_ebid'])) {
+  	$fieldset['load_ebid_msg'] = array(
+  	  '#type' => t('item'),
+  	  '#value' => t('This event has been loaded from the Eventbrite server.  Editing its tickets is not supported at this time'),
+  	);
+  	
+  	$fieldset['load_ebid'] = array(
+  	  '#type' => 'value',
+  	  '#value' => $element_values['ebid'],
+  	);
+  	
+  	// Do not build the rest of the editing form for Tickets  	
+  	// TODO: Perhaps it would be better to just return here (without $fieldset) while tickets are not editable
+  	return $fieldset;
+  }
+  
+  
   // This checkbox will toggle and allow us to know if ticket values need to be updated
   $fieldset['ticket_toggle'] = array(
     '#type' => 'checkbox',
@@ -344,16 +371,17 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
     '#weight' => -10,
     '#description' => ($ticket_id) ? t('Check this box to update ticket values for this event') : t('A ticket must be created for the event to go Live'),
     '#attributes' => array('class' => 'eventbrite_cck-ticket-toggle'),
-    '#parents' => $parents + array('ticket_toggle'),
+    '#parents' => array_merge($parents, array('ticket_toggle')),
   );
 
-  // Provide info about tickets if event has not yet been created
-  // TODO: Not exactly sure what this is for
+  
+  // Ticket ID if ticket already exists
   if ($ticket_id) {
     $fieldset['ticket_id'] = array(
       '#type' => 'hidden',
       '#value' => $element_values['ticket_id'],
-      '#parents' => $parents + array('ticket_id'),
+    '#parents' => array_merge($parents, array('ticket_id')),
+    '#attributes' => array('class' => 'eventbrite_cck-ticket-id'),
     );
   }
 
@@ -364,10 +392,11 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
     '#size' => 60,
     '#maxlength' => 255,
     '#weight' => 0,
-    '#required' => $element['#required'],
-    '#parents' => $parents + array('ticket_name'),
+//    '#required' => $element['#required'],
+    '#parents' => array_merge($parents, array('ticket_name')),
     '#description' => t('Examples: Member, Non-member, Student, Early Bird'),
     '#attributes' => array('class' => 'eventbrite_cck-ticket-input'),
+    '#prefix' => '<div class="eventbrite_cck-ticket-wrapper">',
   );
 
   $fieldset['ticket_type'] = array(
@@ -375,13 +404,13 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
     '#type' => 'radios',
     '#default_value' => isset($element_values['ticket_type']) ? $element_values['ticket_type'] : '',
     '#weight' => 1,
-    '#required' => $element['#required'],
+//    '#required' => $element['#required'],
     '#options' => array(
       'fixed' => t('Fixed Price'),
       'free' => t('Free'),
-      'donation' => t('Donation Format (Attendee can specify payment amount)')
+      'donation' => t('Donation Format Attendee can specify payment amount')
     ),
-    '#parents' => $parents + array('ticket_type'),
+    '#parents' => array_merge($parents, array('ticket_type')),
     '#attributes' => array('class' => 'eventbrite_cck-ticket-input'),
   );
 
@@ -390,10 +419,9 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
     '#type' => 'textfield',
     '#default_value' => isset($element_values['price']) ? $element_values['price'] : '',
     '#weight' => 2,
-    '#required' => 0,
     '#size' => 10,
     '#maxlength' => 6,
-    '#parents' => $parents + array('price'),
+    '#parents' => array_merge($parents, array('price')),
     '#description' => t('Only used for Fixed Price tickets'),
     '#attributes' => array('class' => 'eventbrite_cck-ticket-input'),
   );
@@ -403,20 +431,19 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
     '#type' => 'textfield',
     '#default_value' => isset($element_values['quantity']) ? $element_values['quantity'] : '',
     '#weight' => 2,
-    '#required' => $element['#required'],
     '#size' => 10,
     '#maxlength' => 6,
-    '#parents' => $parents + array('quantity'),
+    '#parents' => array_merge($parents, array('quantity')),
     '#attributes' => array('class' => 'eventbrite_cck-ticket-input'),
   );
-
   $fieldset['ticket_description'] = array(
     '#title' => t('Ticket Description'),
     '#type' => 'textarea',
     '#default_value' => isset($element_values['ticket_description']) ? $element_values['ticket_description'] : '',
     '#weight' => 5,
-    '#parents' => $parents + array('ticket_description'),
+    '#parents' => array_merge($parents, array('ticket_description')),
     '#attributes' => array('class' => 'eventbrite_cck-ticket-input'),
+    '#suffix' => '</div>',
   );
 
   return $fieldset;
@@ -424,6 +451,8 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
 
 /**
  * Process discount codes.
+ * 
+ * TODO: discount codes are not currently supported
  */
 function _eventbrite_cck_event_widget_process_discounts($element) {
   $fieldset = array(
@@ -432,7 +461,6 @@ function _eventbrite_cck_event_widget_process_discounts($element) {
     '#weight' => 6,
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
-    '#attributes' => array('class' => 'eventbrite_cck-new-create'),
   );
 
   $fieldset['discounts_info'] = array(
@@ -440,7 +468,6 @@ function _eventbrite_cck_event_widget_process_discounts($element) {
     '#value' => t('Discount Codes are not yet implemented'),
   );
 
-  // TODO: Consider just returning here (without $fieldset), since discount codes are not supported
   return $fieldset;
 }
 
@@ -457,7 +484,7 @@ function _eventbrite_cck_event_widget_process_payment($element, $fieldset_class)
     '#weight' => 5,
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
-    '#attributes' => array('class' => $fieldset_class .' eventbrite_cck-payment-settings'),
+//    '#attributes' => array('class' => $fieldset_class .' eventbrite_cck-payment-settings'),
   );
 
   // TODO: This is a bandaid since we don't have a way yet to edit payment settings for events loaded form the server
@@ -631,15 +658,12 @@ function _eventbrite_cck_event_widget_validate_tickets($element, $form_values) {
   $field_name = $element['#field_name'];
 
   foreach ($form_values['tickets'] as $index => $ticket) {
-    if ($form_values['status'] == 'live' && !$ticket['ticket_toggle']) {
-      form_set_error($field_name, t('You must create a ticket for this event if you want it to be Live in !field_label', array('!field_label' => $field['widget']['label'])));
-    }
-    if ($ticket['ticket_toggle']) {
+  	if ($ticket['ticket_toggle']) {
       // Ticket Name is required here
       if (empty($ticket['ticket_name'])) {
         form_set_error($field_name, t('The ticket name field is required for event submission in !field_label', array('!field_label' => $field['widget']['label'])));
       }
-
+      
       // Ticket Type is required
       if (empty($ticket['ticket_type'])) {
         form_set_error($field_name, t('The ticket type field is required for event submission in !field_label', array('!field_label' => $field['widget']['label'])));
@@ -656,7 +680,16 @@ function _eventbrite_cck_event_widget_validate_tickets($element, $form_values) {
           form_set_error($field_name, t('There must be a price entered for fixd price tickets in !field_label', array('!field_label' => $field['widget']['label'])));
         }
       }
-    }
+  	}
+  	else {
+  	  if (empty($ticket['ticket_id'])) {
+  	  	// Ticket id is not set, no ticket exists
+  	  	// Better make sure that this ticket status wasn't set to live
+        if ($form_values['status'] == 'live') {
+          form_set_error($field_name, t('You must create a ticket for this event if you want it to be Live in !field_label', array('!field_label' => $field['widget']['label'])));
+        }
+  	  }
+  	}
   }
 }
 

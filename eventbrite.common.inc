@@ -81,7 +81,7 @@ function _eventbrite_common_process_request($request) {
       }
     }
   }
-//print(EVENTBRITE_SERVER . $request->op .'?'. $request->query_string);exit(4);
+//print(EVENTBRITE_SERVER . $request->op .'?'. $request->query_string)."<br><br>\n";
   // Send HTTP request to the server - since we don't have fresh data
   if ($result = drupal_http_request(EVENTBRITE_SERVER . $request->op .'?'. $request->query_string) ) {
     $result->module = $request->module;

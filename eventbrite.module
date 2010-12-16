@@ -34,7 +34,7 @@ function eventbrite_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 5,
   );
-
+/* TOD: Add in venue creation
   $items['admin/settings/eventbrite/add-venue'] = array(
     'title' => 'Add Venue',
     'description' => 'Add an Eventbrite venue',
@@ -46,6 +46,7 @@ function eventbrite_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 4,
   );
+  */
   $items['admin/settings/eventbrite/list-venues'] = array(
     'title' => 'List Venues',
     'description' => 'List Eventbrite venues',
@@ -57,7 +58,8 @@ function eventbrite_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 2,
   );
-  $items['admin/settings/eventbrite/list-venues/%'] = array(
+/* TOD: Add in venue editing
+    $items['admin/settings/eventbrite/list-venues/%'] = array(
     'title' => 'Edit Venue',
     'description' => 'Edit an Eventbrite venue',
     'page callback' => 'drupal_get_form',
@@ -68,7 +70,7 @@ function eventbrite_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 3,
   );
-  
+  */
   return $items;
 }
 
@@ -191,6 +193,5 @@ function eventbrite_get_events_options() {
  * This function returns TRUE if Eventbrite module is set up with valid Eventbrite authentication
  */
 function eventbrite_is_valid_auth() {
-	drupal_set_message(variable_get('eventbrite_is_valid_auth', FALSE));
   return variable_get('eventbrite_is_valid_auth', FALSE);
 }

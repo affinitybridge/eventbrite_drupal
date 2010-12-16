@@ -66,6 +66,16 @@ function _eventbrite_cck_field_settings_db_columns($field) {
     'sortable' => FALSE,
     'views' => TRUE,
   );
+  $columns['venue_id'] = array(
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => FALSE,
+    'default' => 0,
+    'sortable' => TRUE,
+    'views' => TRUE,
+  );
+
+  
 
   $columns['offset'] = array(
     'type' => 'int',
@@ -223,6 +233,7 @@ function _eventbrite_cck_field_load($node, $field, &$items, $teaser, $page) {
  * Implementation of CCK's hook_field($op = 'validate').
  */
 function _eventbrite_cck_field_validate(&$node, $field, &$items, $teaser, $page) {
+//	exit(4);
   // Do validation on the field values here. The widget
   // will do its own validation and you cannot make any
   // assumptions about what kind of widget has been used,
@@ -314,6 +325,8 @@ function _eventbrite_cck_field_sanitize(&$node, $field, &$items, $teaser, $page)
  * Implementation of CCK's hook_field($op = 'presave').
  */
 function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) {
+	//  print_r($node);exit(5);
+	
   if (is_array($items) && !empty($items)) {
   	// Loop through multiple form values
     foreach ($items as $delta => $item) {
@@ -385,7 +398,8 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
         $items[$delta]['end_date'] = $new_event->end_date;
         // TODO: These timezones coming from Eventbrite server are DEPRECATED & will not work in D7
         $items[$delta]['timezone'] = $new_event->timezone;
-      	
+        $items[$delta]['venue_id'] = $new_event->venue_id;
+        
         // Update the ticket settings
         // TODO: Allow for multiple ticket processing
         _eventbrite_cck_field_presave_ticket($items[$delta]['tickets'][0], $new_event, $item[load_ebid]);
@@ -451,6 +465,24 @@ function _eventbrite_cck_field_presave_ticket(&$ticket_item, $event, $load_ebid 
     }
     // The call to create/update ticket just returns ticket id w/ confirmation
     //   And Eventbrite does not have a get ticket API call yet, so nothing to stuff back into the database
+  }
+  else {
+    // TODO: Tickets for loaded events need to be editable
+    
+  	// This is load_ebid field within tickets is a temporary fix to mark tickets that we don't know about
+    // The tickets form does not get built so payment just goes into the DB with load_ebid
+    if ($load_ebid) {
+      $ticket_item = array(
+        'load_ebid' => $load_ebid,
+      );
+    }
+    else {
+      // Check if ticket_id is set--if it isn't, then clear these form values before saving
+      if (!isset($ticket_item['ticket_id'])) {
+        // These ticket values should be empty, so clear form values (which are just the defaults) before save
+        $ticket_item = array();
+      }
+    }
   }
 }
 
@@ -561,16 +593,16 @@ function _eventbrite_cck_populate_ticket_from_form($item) {
 function _eventbrite_cck_populate_payment_settings_from_form($item) {
   $payment = new stdClass();
 
-  $payment->accept_paypal = isset($item['accept_paypal']) ? 1 : 0;
+  $payment->accept_paypal = $item['accept_paypal'];
   $payment->paypal_email = $item['paypal_email'];
-  $payment->accept_google = isset($item['accept_google']) ? 1 : 0;
+  $payment->accept_google = $item['accept_google'];
   $payment->google_merchant_id = $item['google_merchant_id'];
   $payment->google_merchant_key = $item['google_merchant_key'];
-  $payment->accept_check = isset($item['accept_check']) ? 1 : 0;
+  $payment->accept_check = $item['accept_check'];
   $payment->instructions_check = $item['instructions_check'];
-  $payment->accept_cash = isset($item['accept_cash']) ? 1 : 0;
+  $payment->accept_cash = $item['accept_cash'];
   $payment->instructions_cash = $item['instructions_cash'];
-  $payment->accept_invoice = isset($item['accept_invoice']) ? 1 : 0;
+  $payment->accept_invoice = $item['accept_invoice'];
   $payment->instructions_invoice = $item['instructions_invoice'];
 
   return $payment;

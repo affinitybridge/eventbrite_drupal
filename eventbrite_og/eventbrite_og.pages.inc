@@ -26,8 +26,36 @@ function eventbrite_og_default_payment_settings($form_state, $group_node) {
   og_set_group_context($group_node);
 
   module_load_include('inc', 'eventbrite', 'eventbrite.payment');
-  $form = eventbrite_ui_payment_settings_form();
+
+  // TODO: Get current values for this group from DB table
+  $default_values = variable_get('eventbrite_default_payment_settings', array());
+
+  $form = eventbrite_payment_settings_form($default_values);
   
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Update default settings'),
+  );
+
   return $form;
 }
 
+/*
+ * Default Payment Settings Form Validate
+ */
+function eventbrite_payment_default_settings_validate($form, &$form_state) {
+  $form_values = $form_state['values'];
+
+  $form_errors = eventbrite_payment_settings_errors($form_values);
+  foreach ($form_errors as $form_element => $error_msg) {
+  	form_set_error($form_element, $error_msg);
+  }
+}
+
+/*
+ * Default Payment Settings Form Submit
+ */
+function eventbrite_payment_default_settings_submit($form, &$form_state) {
+  drupal_set_message('Group specific payment settings can not be customized at this time', 'error');
+  // TODO: Save form values to DB table
+}

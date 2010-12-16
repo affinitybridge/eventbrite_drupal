@@ -113,7 +113,10 @@ function _eventbrite_api_populate_event($event_data) {
   $event->start_date = (string)$event_data->start_date;
   $event->end_date = (string)$event_data->end_date;
   $event->timezone = (string)$event_data->timezone;
-
+  $event_venue = $event_data->venue;
+  if (isset($event_venue->id)) {
+    $event->venue_id = (integer)$event_venue->id;
+  }
   return $event;
 }
 
@@ -223,7 +226,8 @@ function _eventbrite_api_event_update($event) {
   $request->params['start_date'] = $event->start_date;
   $request->params['end_date'] = $event->end_date;
   $request->params['timezone'] = $event->timezone;
-
+  $request->params['venue_id'] = $event->venue_id;
+  
   // XML data will only come back if no error
   if ($result = _eventbrite_common_process_request($request)) {
     // Populate the event coming back and return it

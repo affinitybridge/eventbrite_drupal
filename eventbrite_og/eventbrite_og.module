@@ -17,6 +17,7 @@ define ('EVENTBRITE_OG_SUBUSER', 2);
  * Implementation of hook_menu().
  */
 function eventbrite_og_menu() {
+  /* TODO: Paymnet settings by group not currently supported
   $items['eventbrite_og/payment-settings/%node'] = array(
     // TODO: Add group name to title field
     'title' => t('Eventbrite default payment settings for group'),
@@ -29,8 +30,9 @@ function eventbrite_og_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'eventbrite_og.pages.inc',
   );
+  */
   
-  // TODO: Move venues into a tree  
+  /* TODO: Venues by group not currently supported
   $items['eventbrite_og/venues/%node'] = array(
     // TODO: Add group name to title field
     'title' => t('Eventbrite venues for group'),
@@ -64,6 +66,7 @@ function eventbrite_og_menu() {
     'type' => MENU_LOCAL_TASK,
     'file' => 'eventbrite_og.pages.inc',
   );
+  */
   
   return $items;
 }
@@ -271,9 +274,6 @@ function eventbrite_og_group_node_validate($form, &$form_state) {
         break;
   	}
   }
-  else {
-  	drupal_set_message('eb disabled in validate');
-  }
 }
 
 function _eventbrite_og_group_submit($node) {
@@ -317,9 +317,12 @@ function _eventbrite_og_group_submit($node) {
 */
 function eventbrite_og_og_links_alter(&$links, $group_node) {
   // TODO: check if this is group admin
-  // TODO: check if the right setting is enabled in the eventbrite group
-  $links['eventbrite_og_venues'] = l('Group venues', 'eventbrite_og/venues/'. $group_node->nid);
-  $links['eventbrite_og_payment_settings'] = l('Group payment settings', 'eventbrite_og/payment-settings/'. $group_node->nid);
+  if ($group_node->eventbrite_og_enabled) {
+    // TODO: allow editing of venues by group
+  	//    $links['eventbrite_og_venues'] = l('Group venues', 'eventbrite_og/venues/'. $group_node->nid);
+    // TODO: allow editing of payment settings by group
+//    $links['eventbrite_og_payment_settings'] = l('Group payment settings', 'eventbrite_og/payment-settings/'. $group_node->nid);
+  }
 }
   
 /**

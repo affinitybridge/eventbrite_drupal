@@ -114,8 +114,6 @@ function eventbrite_payment_settings_errors($values) {
  * Default Payment Settings Form
  */
 function eventbrite_payment_default_settings() {
-  module_load_include('inc', 'eventbrite', 'eventbrite.forms');
-  
   $default_values = variable_get('eventbrite_default_payment_settings', array());
 
   $form = eventbrite_payment_settings_form($default_values);
