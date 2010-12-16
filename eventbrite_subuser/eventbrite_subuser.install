@@ -19,12 +19,6 @@ function eventbrite_subuser_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
-      'module' => array(
-        'type' => 'varchar',
-        'length' => 32,
-        'not null' => TRUE,
-        'default' => 'eventbrite_subuser',
-      ),
       'email' => array(
         'type' => 'varchar',
         'length' => 64,
@@ -33,11 +27,6 @@ function eventbrite_subuser_schema() {
       'user_key' => array(
         'type' => 'varchar',
         'length' => 32,
-        'not null' => FALSE,
-      ),
-      'password' => array(
-        'type' => 'varchar',
-        'length' => 8,
         'not null' => FALSE,
       ),
     ),

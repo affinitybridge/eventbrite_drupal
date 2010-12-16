@@ -36,7 +36,7 @@ function _eventbrite_api_get_venues() {
 
   // Build a new request object
   $request = _eventbrite_common_new_request('user_list_venues', 'get');
-drupal_set_message('s');
+
   if ($result = _eventbrite_common_process_request($request)) {
     $xml_object = $result->object;
     $venues = array();
@@ -48,7 +48,6 @@ drupal_set_message('s');
         // If $result->updated then these venues should be saved to the DB
         // TODO: Look at $result->prev_cache to see if each specific venue has changed before resaving
         if ($result->updated) {
-        	drupal_set_message('here');
           $venue->user_key = $result->user_key;
           $venue->module = $result->module;
           
@@ -64,23 +63,27 @@ drupal_set_message('s');
  * This function fetches one user by user key
  */
 function _eventbrite_api_get_user($user_key = '', $key_type = '') {
-	drupal_set_message('calling get_user with user_key '. $user_key .' and key_type '. $key_type);
-	
-  // Build a new request object
+	// Build a new request object
   $request = _eventbrite_common_new_request('user_get', 'get');
-  
+
+  switch ($key_type) {
+  	case 'email':
+  	  $request->params['email'] = $user_key;
+  	  break;
+  	case 'user_id':
+  	  $request->params['user_id'] = $user_key;
+  	  break;
+  	case 'user_key':
+  	  $request->user_key = $user_key;
+  	  break;
+  }
   if ($user_key) {
   	$request->$key_type = $user_key;
   }
 
-//  $request->user_key = $user_key;
-
   if ($result = _eventbrite_common_process_request($request)) {
     $xml_object = $result->object;
-    // Just checking if a user id was returned, no need to do anything beyond that
-    // Eventbrite API returns user_id, even though documentation says it returns id
-    // TODO: write a populate user function much like _eventbrite_api_populate_event()
-    if ($user = _eventbrite_api_populate_user($xml_object)) {
+    if ($eb_user = _eventbrite_api_populate_user($xml_object)) {
       return $eb_user;
     }
   }
@@ -117,24 +120,21 @@ function _eventbrite_api_populate_event($event_data) {
 function _eventbrite_api_populate_user($user_data) {
   $eb_user = new stdClass();
   $eb_user->user_id = (integer)$user_data->user_id;
-  $eb_user->user_key = (string)$user_key->title;
+  $eb_user->user_key = (string)$user_data->user_key;
   $eb_user->email = (string)$user_data->email;
-  if (isset($user_data->subusers)) {
-  	drupal_set_message('WE HAEV SUB USERS!!!!!!!');
-  	$eb_user->subusers = array();
-  	foreach ($user_data->subusers as $subuser) {
-  	  $eb_subuser = new stdClass();
-  	  // TODO: this might just be id rather than user_id
-  	  $eb_subuser->user_id = (integer)$subuser->user_id;
-  	  $eb_subuser->email = (string)$subuser->email;
-  	  $eb_user->subusers[] = $eb_subuser;
-  	}
-  }
-  $eb_user->start_date = (string)$user_data->start_date;
-  $eb_user->end_date = (string)$user_data->end_date;
-  $eb_user->timezone = (string)$user_data->timezone;
 
-  return $event;
+  if ($subusers = (array)$user_data->subusers) {
+    $eb_user->subusers = array();
+    foreach ($subusers['subuser'] as $subuser) {
+  	  $eb_subuser = new stdClass();
+  	  $eb_subuser->user_id = (integer)$subuser->id;
+  	  $eb_subuser->email = (string)$subuser->email;
+
+      $eb_user->subusers[] = $eb_subuser;
+    }
+  }
+
+  return $eb_user;
 }
 
 function _eventbrite_api_populate_venue($venue_data) {

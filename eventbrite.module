@@ -107,8 +107,8 @@ function eventbrite_get($op, $id = NULL) {
       }
       break;
     case 'user_get_by_key':
-      if ($id) {
-        return _eventbrite_api_get_user($id, 'user_key');
+   	  if ($id) {
+      	return _eventbrite_api_get_user($id, 'user_key');
       }
       break;
   }

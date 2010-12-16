@@ -1,24 +1,17 @@
 Drupal.behaviors.eventBrite = function (context) {
-  $('input.eventbrite_og-account').click(function() {
-    if ($(this).attr('value') == 'eb_og_subuser' ) {
-      $('#edit-eb-subuser-email-wrapper').show();
-      $('#edit-eb-user-key-wrapper').hide();
-    }
-    else if ($(this).attr('value') == 'eb_og_custom' ) {
-      $('#edit-eb-subuser-email-wrapper').hide();
-      $('#edit-eb-user-key-wrapper').show();
+  $('input.eventbrite_og-enabled').click(function() {
+    if ($(this).attr('value') == 0) {
+      $('#edit-eventbrite-subuser-email-wrapper').hide();
+      $('#edit-eventbrite_og-user-key-wrapper').hide();
     }
     else {
-      $('#edit-eb-subuser-email-wrapper').hide();
-      $('#edit-eb-user-key-wrapper').hide();
+      $('#edit-eventbrite-subuser-email-wrapper').show();
+      $('#edit-eventbrite_og-user-key-wrapper').show();
     }
   });
-	 
-  if ($(this).attr('value') != 'eb_og_subuser' ) {
-    $('#edit-eb-subuser-email-wrapper').hide();
-  }
-  if ($(this).attr('value') != 'eb_og_custom' ) {
-    $('#edit-eb-user-key-wrapper').hide();
-  }
- 
+
+  if ($('input:checked.eventbrite_og-enabled').val() == 0) {
+    $('#edit-eventbrite-subuser-email-wrapper').hide();
+    $('#edit-eventbrite_og-user-key-wrapper').hide();
+  } 
 };

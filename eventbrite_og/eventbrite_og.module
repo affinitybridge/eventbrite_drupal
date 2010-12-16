@@ -4,10 +4,14 @@
 // TODO: Add eventbrite_og_requirements (copy from Eventbrite Blocks)
 
 // Selective groups states. chosen by the group admin
+/*
 define ('EVENTBRITE_OG_DISABLED', 'eb_og_disabled');
 define ('EVENTBRITE_OG_SUBUSER', 'eb_og_subuser');
 define ('EVENTBRITE_OG_CUSTOM', 'eb_og_custom');
-define ('EVENTBRITE_OG_INHERIT', 'eb_og_inherit');
+*/
+define ('EVENTBRITE_OG_DISABLED', 0);
+define ('EVENTBRITE_OG_CUSTOM', 1);
+define ('EVENTBRITE_OG_SUBUSER', 2);
 
 /**
  * Implementation of hook_menu().
@@ -23,6 +27,7 @@ function eventbrite_og_menu() {
     'access callback' => 'user_access',
     'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
+    'file' => 'eventbrite_og.pages.inc',
   );
   
   // TODO: Move venues into a tree  
@@ -36,6 +41,7 @@ function eventbrite_og_menu() {
     'access callback' => 'user_access',
     'access arguments' => array('administer site configuration'),
     'type' => MENU_CALLBACK,
+    'file' => 'eventbrite_og.pages.inc',
   );
   
   $items['eventbrite_og/%node/venues/list'] = array(
@@ -43,6 +49,7 @@ function eventbrite_og_menu() {
     'title' => t('List Venues'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -1,
+    'file' => 'eventbrite_og.pages.inc',
   );
   
   $items['eventbrite_og/%node/venues/add'] = array(
@@ -55,6 +62,7 @@ function eventbrite_og_menu() {
     'access callback' => 'user_access',
     'access arguments' => array('administer site configuration'),
     'type' => MENU_LOCAL_TASK,
+    'file' => 'eventbrite_og.pages.inc',
   );
   
   return $items;
@@ -67,36 +75,6 @@ function eventbrite_og_perm() {
   return array('administer eventbrite group accounts');
 }
 
-
-function eventbrite_og_venue_form($form_state, $venue_id = 0) {
-//  $payment_settings_form = eventbrite_ui_payment_settings_form();
-//  return system_settings_form($payment_settings_form);
-//drupal_set_message('yar'.$yar);
-  og_set_group_context($group_node);
-	
-// TODO: payment settings form?  THis won't do!
-//  module_load_include('inc', 'eventbrite_ui', 'eventbrite_ui.forms');
-  //  $form = eventbrite_ui_payment_settings_form();
-  
-  return $form;
-}
-
-function eventbrite_og_venue_list($group_node) {
-  og_set_group_context($group_node);
-
-  module_load_include('inc', 'eventbrite', 'eventbrite.venue');
-  
-  return eventbrite_venue_list();
-}
-
-function eventbrite_og_default_payment_settings($form_state, $group_node) {
-  og_set_group_context($group_node);
-
-  module_load_include('inc', 'eventbrite', 'eventbrite.payment');
-  $form = eventbrite_ui_payment_settings_form();
-  
-  return $form;
-}
 
 // TODO: This may not need to be in its own function after all, only call is in hook_nodeapi() load op
 function _eventbrite_og_load($nid) {
@@ -114,10 +92,15 @@ function eventbrite_og_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
   if (og_is_group_type($node->type)) {
     switch ($op) {
       case 'load':
-      	$node->eb_account_type = EVENTBRITE_OG_DISABLED;
-      	if (isset($node->nid) && ($eventbrite_og = _eventbrite_og_load($node->nid))) {
-          $node->eventbrite_og = $eventbrite_og;
-      	}
+        $result = db_query('SELECT * FROM {eventbrite_og} WHERE nid = %d', $node->nid);
+        if ($row = db_fetch_object($result)) {
+          $node->eventbrite_og_enabled = $row->eventbrite_og_enabled;
+          $node->eventbrite_og_user_key = $row->eventbrite_og_user_key;
+        }
+        else {
+          $node->eventbrite_og_enabled = 0;
+          $node->eventbrite_og_user_key = '';
+        }
         break;
 
       case 'prepare':
@@ -139,31 +122,38 @@ function eventbrite_og_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
   }
 }
 
+/*
+ * This is in a function so that it's easier to hack later
+ */
+function _eventbrite_og_options() {
+  $options = array(
+    EVENTBRITE_OG_DISABLED => t('Do not enable Eventbrite integration for this group type'),
+    EVENTBRITE_OG_CUSTOM => t('Allow groups to enter an Eventbrite user key to manage their events'),
+  );
+  if (module_exists('eventbrite_subuser')) {
+  	$options[EVENTBRITE_OG_SUBUSER] = t('Allow groups to select from one of the primary site account\'s subusers');
+  }
+  return $options;
+}
+
 function eventbrite_og_form_node_type_form_alter(&$form, &$form_state) {
   $type = $form['#node_type']->type;
   if (og_is_group_type($type)) {
   	// This is a group type so add form elements for eventbrite_og
-    $form['#submit'][] = 'eventbrite_og_node_type_form_submit';  	
-
     $form['og']['eventbrite_og'] = array(
-      '#type' => 'checkboxes',
+      '#type' => 'radios',
       '#title' => t('Eventbrite integration for Organic Groups'),
-      '#options' => array(
-        EVENTBRITE_OG_SUBUSER => t('Allow groups to create a subuser to manage their events'),
-        EVENTBRITE_OG_CUSTOM => t('Allow groups to enter an Eventbrite user key to manage their events'),
-        EVENTBRITE_OG_INHERIT => t('Allow groups to inherit the master Eventbrite user key to manage their events'),
-      ),
-      '#default_value' => variable_get('eventbrite_og_'.$type, array()),
-      '#description' => t('You must enable at least one of these options in order to create events from within a group'),
+      '#options' => _eventbrite_og_options(),
+      '#default_value' => variable_get('eventbrite_og_'.$type, EVENTBRITE_OG_DISABLED),
       '#weight' => 10,
     );
+
+    $form['#submit'][] = 'eventbrite_og_node_type_form_submit';  	
   }
-  
 }
 
 function eventbrite_og_node_type_form_submit($form, &$form_state) {
   $form_values = $form_state['values'];
-//  print_r($form_values['eventbrite_og']);
   variable_set('eventbrite_og_'.$form_values['type'], $form_values['eventbrite_og']);
 }
 
@@ -172,23 +162,16 @@ function eventbrite_og_get_account_options($type) {
   
   if ($allowed_options = variable_get('eventbrite_og_'.$type, array())) {
   	$account_options[EVENTBRITE_OG_DISABLED] = t('Do not enable event management for this group');
-//  	print_r($allowed_options);exit(4);
   	if (module_exists('eventbrite_subuser')) {
-//  		drupal_set_message();
       if ($allowed_options[EVENTBRITE_OG_SUBUSER]) {
   	    $account_options[EVENTBRITE_OG_SUBUSER] = t('Create a subuser account under the site\' Eventbrite account');
       }
     }
     if ($allowed_options[EVENTBRITE_OG_CUSTOM]) {
-//      print EVENTBRITE_OG_CUSTOM.' ';
-    	//print_r($allowed_options);exit(5);
-    	//drupal_set_message('wtf?');
       $account_options[EVENTBRITE_OG_CUSTOM] = t('Enter an Eventbrite user key to use as the Eventbrite account');
     }
     if ($allowed_options[EVENTBRITE_OG_INHERIT]) {
-//    if (in_array(EVENTBRITE_OG_INHERIT, $allowed_options)) {
-//    	drupal_set_message('wtf?');
-    	$account_options[EVENTBRITE_OG_INHERIT] = t('Use the site Eventbrite user key');
+      $account_options[EVENTBRITE_OG_INHERIT] = t('Use the site Eventbrite user key');
     }
   }
 
@@ -199,132 +182,133 @@ function eventbrite_og_form_alter(&$form, &$form_state, $form_id) {
   if (isset($form['#node'])) {
     $node = $form['#node'];
     if ($form_id == $node->type.'_node_form' && og_is_group_type($node->type)) {
-      if (user_access('administer eventbrite group accounts')) {
-        drupal_add_js(drupal_get_path('module', 'eventbrite_og')  .'/eventbrite_og.js', 'module');
+      $account_type = variable_get('eventbrite_og_'.$node->type, EVENTBRITE_OG_DISABLED);
+      if ($account_type != EVENTBRITE_OG_DISABLED) {
+        if (user_access('administer eventbrite group accounts')) {
+          drupal_add_js(drupal_get_path('module', 'eventbrite_og')  .'/eventbrite_og.js', 'module');
 
-        if ($account_options = eventbrite_og_get_account_options($node->type)) {
           $form['eventbrite_og'] = array(
             '#type' => 'fieldset',
             '#title' => t('Eventbrite Settings'),
           );
 
-          $form['eventbrite_og']['account_type'] = array(
+          $form['eventbrite_og']['eventbrite_og_enabled'] = array(
             '#type' => 'radios',
-            '#title' => t('Eventbrite Settings'),
-            '#options' => $account_options,
+            '#title' => t('Eventbrite Groups Integration'),
+            '#options' => array(
+              0 => t('Disabled'),
+              1 => t('Enabled'),
+            ),
             '#required' => 1,
-            '#default_value' => $node->eventbrite_og->account_type,
-            '#attributes' => array('class' => 'eventbrite_og-account'),
+            '#default_value' => $node->eventbrite_og_enabled,
+            '#attributes' => array('class' => 'eventbrite_og-enabled'),
           );
 
-          if (isset($account_options[EVENTBRITE_OG_CUSTOM])) {
-            $form['eventbrite_og']['user_key'] = array(
-              '#type' => 'textfield',
-              '#title' => t('User key'),
-              // TODO: get link for user key
-              '#description' => t('Enter the user key for your group\'s Eventbrite account.  You can find the user key at ...'),
-              '#default_value' => $node->eventbrite_og->custom_user_key,
-              '#attributes' => array('class' => 'eventbrite_og-custom-user-key'),
-            );
-          }
-
-          if (isset($account_options[EVENTBRITE_OG_SUBUSER])) {
-            $form['eventbrite_og']['subuser_email'] = array(
-              '#type' => 'textfield',
-              '#title' => t('Email address'),
-              '#description' => t('Email to use for the creation of Eventbrite sub user account.'),
-              '#default_value' => $node->eventbrite_og->subuser_email,
-              '#attributes' => array('class' => 'eventbrite_og-subuser-email'),
-            );
-          }
+          switch ($account_type) {
+          	case EVENTBRITE_OG_CUSTOM:
+              $form['eventbrite_og']['eventbrite_og_user_key'] = array(
+                '#type' => 'textfield',
+                '#title' => t('User key'),
+                // TODO: get link for user key
+                '#description' => t('Please enter the user key to use for Eventbrite integration within this group.  You can find the user key at ...'),
+                '#default_value' => $node->eventbrite_user_key,
+                '#attributes' => array('class' => 'eventbrite_og-user-key'),
+              );
+              break;
+          	case EVENTBRITE_OG_SUBUSER:
+          	  if (module_exists('eventbrite_subuser')) {
+          	  	$subuser_email_options = eventbrite_subuser_email_options();
+                $form['eventbrite_og']['eventbrite_subuser_email'] = array(
+                  '#type' => 'select',
+                  '#title' => t('Subuser Account'),
+                  '#options' => eventbrite_subuser_email_options(),
+                  '#description' => t('Please select the subuser account to use for Eventbrite integration within this group.'),
+                  '#default_value' => eventbrite_subuser_get_email($node->eventbrite_og_user_key),
+                  '#attributes' => array('class' => 'eventbrite_og-user-key'),
+                );
+          	  }
+          	  break;
+          }          
 
           $form['#validate'][] = 'eventbrite_og_group_node_validate';
         }
       }
-  	}
+    }
   }
 }
 
 function eventbrite_og_group_node_validate($form, &$form_state) {
   $form_values = $form_state['values'];
-  switch ($form_values['account_type']) {
-  	case EVENTBRITE_OG_CUSTOM:
-  	  if (empty($form_values['custom_user_key'])) {
-        form_set_error('custom_user_key', t('You must enter a user key when selecting that Eventbrite account option.'));
-  	    return;
-  	  }
-  	  if (!eventbrite_get('user_get_by_key', $form_values['custom_user_key'])) {
-        form_set_error('custom_user_key', t('The Eventbrite API is not accepting that user key.'));
-  	    return;
-   	  }
-  	  break;
-  	case EVENTBRITE_OG_SUBUSER:
-  		drupal_set_message('validating subuser stuff');
-  	  if (empty($form_values['subuser_email'])) {
-        form_set_error('subuser_email', t('You must enter an email account for subuser account creation.'));
-  	    return;
-  	  }
-  	  if (!valid_email_address($form_values['subuser_email'])) {
-        form_set_error('subuser_email', t('That email address has an invalid format.'));
-  	    return;
-  	  }
-   	  break;
+  if ($form_values['eventbrite_og_enabled']) {
+    $node = $form['#node'];
+  	$account_type = variable_get('eventbrite_og_'.$node->type, EVENTBRITE_OG_DISABLED);
+
+    switch ($account_type) {
+      case EVENTBRITE_OG_CUSTOM:
+  	    if (empty($form_values['eventbrite_og_user_key'])) {
+      	  form_set_error('eventbrite_og_user_key', t('You must enter a user key for the group account to enable Eventbrite integration.'));
+  	    }
+  	    if (!eventbrite_get('user_get_by_key', $form_values['eventbrite_og_user_key'])) {
+          form_set_error('eventbrite_og_user_key', t('The Eventbrite API is not accepting that user key.'));
+  	      return;
+        }
+  	    break;
+  	  case EVENTBRITE_OG_SUBUSER:
+  	  	if (module_exists('eventbrite_subuser')) {
+          if (empty($form_values['eventbrite_subuser_email'])) {
+   	        form_set_error('eventbrite_subuser_email', t('You must select a subuser for the group account to enable Eventbrite integration.'));
+          }
+  	      if ($subuser = eventbrite_subuser_get($form_values['eventbrite_subuser_email'])) {
+            if (!eventbrite_get('user_get_by_key', $subuser->user_key)) {
+              form_set_error('eventbrite_subuser_email', t('The Eventbrite API is not authenticating that subuser.'));
+  	          return;
+            }
+  	      }
+          else {
+            form_set_error('eventbrite_subuser_email', t('The email you entered does not match any subuser accounts.'));
+          }
+   	    }
+        break;
+  	}
+  }
+  else {
+  	drupal_set_message('eb disabled in validate');
   }
 }
 
 function _eventbrite_og_group_submit($node) {
   $eventbrite_og = array(
     'nid' => $node->nid,
-    'account_type' => $node->account_type,
+    'eventbrite_og_enabled' => $node->eventbrite_og_enabled,
+    'eventbrite_og_user_key' => '',
   );
-  // Switch on Group account types
-  switch ($eventbrite_og['account_type']) {
-  	case EVENTBRITE_OG_SUBUSER:
-  		drupal_set_message('submitting subuser stuff');
-  	  if (module_exists('eventbrite_subuser')) {
-        // If this group does not have a subuser created already then create one
-        if (eventbrite_subuser_get($node->subuser_email)) {
-        	drupal_set_message('got the subuser');
-          // A sub user with this email has already been created and is in the system
-          $eventbrite_og['subuser_email'] = $node->subuser_email;
-        }
-        else {
-        	drupal_set_message('didnt got the subuser');
-        	// Create a new sub user with this email address
-          if (eventbrite_subuser_create($node->subuser_email, 'eventbrite_og')) {
-        	drupal_set_message('created the subuser');
-          	drupal_set_message('A new sub account was created on Eventbrite for this group.');
-          	$eventbrite_og['subuser_email'] = $node->subuser_email;
-          }
-          else {
-        	drupal_set_message('didnt create the subuser');
-          	// Could not create the subuser
-  	  	    drupal_set_message('A new sub account could not be created on Eventbrite.');
-          	$eventbrite_og['subuser_email'] = '';
-          	// Set this group to disabled again since htere is no subuser
-          	$eventbrite_og['account_type'] = EVENTBRITE_OG_DISABLED;
-          }
-        }  	  	
-  	  }
-  	  else {
-  	  	drupal_set_message('reset');
-  	  	// If this module is not enabled then reset account_type
-        $eventbrite_og['account_type'] = EVENTBRITE_OG_DISABLED;
-   	  }
-  	  break;
-  	case EVENTBRITE_OG_CUSTOM:
-  	  // This key will have been checked in the validation step
-  	  $eventbrite_og['custom_user_key'] = $node->custom_user_key;
-  	  break;
+
+  if ($node->eventbrite_og_enabled) {
+  	$account_type = variable_get('eventbrite_og_'.$node->type, EVENTBRITE_OG_DISABLED);
+    switch ($account_type) {
+      case EVENTBRITE_OG_CUSTOM:
+  	    $eventbrite_og['eventbrite_og_user_key'] = $node->eventbrite_og_user_key;
+        break;
+      case EVENTBRITE_OG_SUBUSER:
+      	if (module_exists('eventbrite_subuser')) {
+  	      if ($subuser = eventbrite_subuser_get($node->eventbrite_subuser_email)) {
+  	        $eventbrite_og['eventbrite_og_user_key'] = $subuser->user_key;
+  	      }
+  	      else {
+  	      	$eventbrite_og['eventbrite_og_enabled'] = 0;
+  	      }
+      	}
+      	break;
+    }
   }
 
   // Need to check if there is a row here already
   $result = db_query('SELECT * FROM {eventbrite_og} WHERE nid = %d', $node->nid);
   if ($db_row = db_fetch_object($result)) {
-    drupal_write_record('eventbrite_og', $eventbrite_og, 'nid');
+    drupal_write_record('eventbrite_og', $eventbrite_og, array('nid'));
   }
   else {
-    drupal_write_record('eventbrite_og', $eventbrite_og);
+  	drupal_write_record('eventbrite_og', $eventbrite_og);
   }
 }
 
@@ -351,8 +335,13 @@ function eventbrite_og_field_access($op, $field, $account, $node = NULL) {
       case 'edit':
       	// Check if there is a group context
       	if (og_is_group_post_type($node->type) && ($group_node = og_get_group_context($node->type))) {
-      	  // Do not show this field if the group node has not been Eventbrite-enabled.
-      	  if ($group_node->eventbrite_og->account_type == EVENTBRITE_OG_DISABLED) {
+          $account_type = variable_get('eventbrite_og_'.$group_node->type, EVENTBRITE_OG_DISABLED);
+          if ($account_type == EVENTBRITE_OG_DISABLED) {
+            // Do not show this field if the group type has not been Eventbrite enabled.
+          	return FALSE;
+          }
+      	  if (!$group_node->eventbrite_og_enabled) {
+            // Do not show this field if the group node has not been Eventbrite enabled.
       	  	return FALSE;
       	  }
       	}
@@ -367,8 +356,10 @@ function eventbrite_og_field_access($op, $field, $account, $node = NULL) {
 function eventbrite_og_eventbrite_request_alter(&$request) {
   // Check if there is a group context
   if ($group_node = og_get_group_context()) {
-  	// Check if eventbrite has been enabled for this group
-    if ($group_node->eb_account != EVENTBRITE_OG_DISABLED) {
+  	// No need to check group type since field will be disabled when group node type not enabled
+  	  	
+  	// Check if eventbrite has been enabled for this group node -- this might already get checked
+  	if ($group_node->eventbrite_og_enabled) {
   	  switch ($request->op) {
   	  	case 'user_list_events':
   	  	case 'event_get':
@@ -378,19 +369,10 @@ function eventbrite_og_eventbrite_request_alter(&$request) {
         case 'ticket_update':
         case 'user_list_venues':
           $request->module = 'eventbrite_og';
-          switch ($group_node->eb_account) {
-  	  	  	case EVENTBRITE_OG_CUSTOM:
-  	  	  	  drupal_set_message('Replaced the user key with custom user key '. $group_node->custom_user_key .' on op '. $request->op);
-  	  	  	  $request->user_key = $group_node->custom_user_key;
-  	  	  	  break;
-  	  	  	case EVENTBRITE_OG_SUBUSER:
-  	  	  	  drupal_set_message('Replaced the user key with subuser key '. $group_node->subuser_key .' on op '. $request->op);
-  	  	  	  $request->user_key = $group_node->subuser_key;
-  	  	  	  break;
-  	  	  }
+          $request->user_key = $group_node->eventbrite_og_user_key;
   	  	  break;
   	  	default:
-//  	  	  drupal_set_message('did not match the right op, so not replacing anything');  
+  	  	  // Don't make replacements if the $request->op didn't match the list
   	  }
   	}
   }

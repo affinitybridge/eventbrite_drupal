@@ -20,21 +20,16 @@ function eventbrite_og_schema() {
         'size'            => 'normal',
         'not null'        => TRUE,
       ),
-      'account_type' => array(
+      'eventbrite_og_enabled' => array(
         'type' => 'int',
         'size' => 'tiny',
         'not null' => TRUE,
+        'default' => 0,
       ),
-      'custom_user_key' => array(
+      'eventbrite_og_user_key' => array(
         'type' => 'varchar',
         'length' => 32,
-        'not null' => FALSE,
-        'default' => '',
-      ),
-      'subuser_email' => array(
-        'type' => 'varchar',
-        'length' => 64,
-        'not null' => FALSE,
+        'not null' => TRUE,
         'default' => '',
       ),
     ),

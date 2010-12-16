@@ -7,8 +7,8 @@
 function eventbrite_subuser_menu() {
 
   $items['admin/settings/eventbrite/subuser'] = array(
-    'title' => 'List Sub Users',
-    'description' => 'List sub-users created under the site\'s master Eventbrite account',
+    'title' => 'List Subusers',
+    'description' => 'List subusers created under the site\'s master Eventbrite account',
     'page callback' => 'eventbrite_subuser_list',
     'access callback' => 'user_access',
     'access arguments' => array('administer eventbrite settings'),
@@ -19,40 +19,47 @@ function eventbrite_subuser_menu() {
   return $items;
 }
 
-function eventbrite_subuser_create($email, $module) {
-  $subuser = new stdClass();
-  $subuser->email = $email;
-  $subuser->module = $module;
-  $subuser->password = user_password(8);
-  
-  if ($new_subuser = eventbrite_save('user_new', $subuser)) {
-  	drupal_set_message('A new sub-user account was created on the Eventbrite server.');
-  	$subuser->user_id = $new_subuser->id;
-  	$subuser->user_key = $new_subuser->user_key;
-
-    drupal_write_record('eventbrite_subuser', $subuser);
-  }  
-}
-
+/*
+ * This function refreshes the subuser list from the Eventbrite server, updates the db, are outputs the list
+ */
 function eventbrite_subuser_refresh() {
   if ($master_user = eventbrite_get('user_get')) {
-  	if (isset($master_user->subusers)) {
-  	  $subusers = array();
+  	if (isset($master_user->subusers)) {  		
+  	  // There are subusers on the Eventbrite server, check what we have in the DB
+  	  $subusers_db = array();
   	  $result = db_query('SELECT * FROM {eventbrite_subuser}');
   	  while ($row = db_fetch_object($result)) {
-  	  	$subusers[$row->subuser_id] = $row;
+  	  	$subusers_db[$row->user_id] = $row;
   	  }
-  	  
-  	  // Loop through subusers list from server request to see if there are new subusers
-  	  foreach ($master_user->subusers as $new_subuser) {
-  	  	if (!isset($subusers[$new_subuser->user_id])) {
-  	  	  // TODO: get user key by doing a straight get on this user
-          drupal_write_record('eventbrite_subuser', $new_subuser);
-  	  	  $subusers[$new_subuser->user_id] = $new_subuser;
+
+   	  // Loop through subusers list from server request to see if there are new subusers
+  	  foreach ($master_user->subusers as $subuser_server) {
+  	  	$subuser_id = $subuser_server->user_id;
+  	  	// Check if this subuser is in the DB
+  	  	if (isset($subusers_db[$subuser_id])) {
+  	  	  // This subuser is in the DB already, check email to see if it has been updated
+  	  	  if (strcmp($subusers_db[$subuser_id]->email, $subuser_server->email)) {
+  	  	  	// Email has been updated, update in email in DB
+  	  	  	$subusers_db[$subuser_id]->email = $subuser_server->email;
+            drupal_write_record('eventbrite_subuser', $subuser_server, array('user_id'));
+  	  	  }
+  	  	}
+  	  	else {
+  	  	  // Insert this subuser into the DB
+  	  	  // Get user_key from Eventbrite which was not in user_get
+  	  	  if ($new_subuser = eventbrite_get('user_get_by_id', $subuser_id)) {
+            drupal_write_record('eventbrite_subuser', $new_subuser);
+  	  	    $subusers_db[$new_subuser->user_id] = $new_subuser;
+  	  	  }
+  	  	  else {
+  	  	  	// Could not get this subuser from the Eventbrite server, something is definitely wrong
+  	  	  	drupal_set_message('Could not fetch the subuser '. $subuser_server->email. ' from the server', 'error');
+  	  	  }
   	  	}
   	  }
-  	  // TODO: See if any have been deleted
-  	  return $subusers;
+  	  // TODO: See if any subusers have been deleted (ie. are not coming in from the server but are in the DB, they should be deleted
+
+  	  return $subusers_db;
   	}
   	else {
   	  // No subusers
@@ -61,28 +68,78 @@ function eventbrite_subuser_refresh() {
   }
 }
 
+function eventbrite_subuser_email_options($required = FALSE) {
+  $subuser_email_options = array();
+  if (!$required) {
+  	$subuser_email_options[''] = '--';
+  }
+  if ($subusers = _eventbrite_subuser_load_all()) {
+  	foreach ($subusers as $subuser) {
+  	  $subuser_email_options[$subuser->email] = $subuser->email;
+  	}
+  }
+  return $subuser_email_options;
+}
+
+function eventbrite_subuser_get_email($user_key = '') {
+  if ($user_key && ($subusers = _eventbrite_subuser_load_all())) {
+  	foreach ($subusers as $subuser) {
+  	  if (!strcmp($subuser->user_key, $user_key)) {
+  	  	return $subuser->email;
+  	  }
+  	}
+  }
+  return '';
+}
+
+function _eventbrite_subuser_load_all() {
+  static $subusers;
+  if (!isset($subusers)) {
+  	$subusers = array();
+    $result = db_query('SELECT * FROM {eventbrite_subuser} ORDER BY email');
+    while ($row = db_fetch_object($result)) {
+      $subusers[$row->email] = $row;
+    }
+  }
+  return $subusers;
+}
+
+
 /*
- * This function grabs the subuser by email.  Very simple.
+ * This function grabs the subuser by email
  */
 function eventbrite_subuser_get($email) {
-  $result = db_query('SELECT * FROM {eventbrite_subuser} WHERE email = "%d"');
-  if ($row = db_fetch_object($result)) {
-  	return $row;
+  if ($subusers = _eventbrite_subuser_load_all()) {
+  	if ($subusers[$email]) {
+  	  return $subusers[$email];
+  	}
   }
+}
+
+/*
+ * This function returns a list of subusers, with user_key as keys and email as values
+ * 
+ * TODO: This function should NOT list the user keys, that is NOT secure
+ */
+function eventbrite_subuser_options() {
+  $subusers = array();
+  $result = db_query('SELECT * FROM {eventbrite_subuser} ORDER BY email');
+  while ($row = db_fetch_object($result)) {
+  	$subusers[$row->user_key] = $row->email;
+  }
+  return $subusers;
 }
 
 function eventbrite_subuser_list() {
   // TODO: Get venues from Eventbrite server
   if ($subusers = eventbrite_subuser_refresh()) {
-    $header = array('Email', 'Password', 'User ID', 'User Key', 'Module');
+    $header = array('Email', 'User ID', 'User Key');
     $rows = array();
     foreach ($subusers as $subuser) {
       $rows[] = array(
         $subuser->email,
-        $subuser->password,
         $subuser->user_id,
         $subuser->user_key,
-        $subuser->module,
       );
     }
     return theme('table', $header, $rows);

@@ -175,11 +175,9 @@ function eventbrite_venue_save($venue) {
   );
   if ($row = db_fetch_object($result)) {
   	// This venue is already in the DB, just update
-//  	drupal_set_message(1);
     drupal_write_record('eventbrite_venue', $venue, array('user_key', 'venue_id'));
   }
   else {
-//  	drupal_set_message(2);
   	// This venue is not in the DB, must insert
     drupal_write_record('eventbrite_venue', $venue);
   }
