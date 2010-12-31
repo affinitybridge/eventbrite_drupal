@@ -1,6 +1,10 @@
 <?php
 // $Id$
 
+/**
+ * @file
+ * Defines venue handling functions
+ */
 
 function eventbrite_venue_form($default_values = array()) {
   $form = array();
@@ -101,7 +105,7 @@ function eventbrite_venue_form_validate($values) {
 function eventbrite_venue_load($venue_id) {
   $result = db_query('SELECT * FROM {eventbrite_venue} WHERE venue_id = %d', $venue_id);
   if ($row = db_fetch_array($result)) {
-  	return $row;
+    return $row;
   }
 }
 
@@ -133,7 +137,7 @@ function eventbrite_venue_validate($form, &$form_state) {
   
   $form_errors = eventbrite_venue_form_validate($form_values);
   foreach ($form_errors as $form_element => $error_msg) {
-  	form_set_error($form_element, $error_msg);
+    form_set_error($form_element, $error_msg);
   }
 }
 
@@ -147,7 +151,7 @@ drupal_set_message('hooray');
 return;
   $form_errors = eventbrite_form_validate($form_values);
   foreach ($form_errors as $form_element => $error_msg) {
-  	form_set_error($form_element, $error_msg);
+    form_set_error($form_element, $error_msg);
   }
 }
 
@@ -158,7 +162,7 @@ function eventbrite_venue_options($required = FALSE) {
     $venue_options[''] = '--';
   }
   while ($row = db_fetch_object($result)) {
-  	$venue_options[$row->venue_id] = $row->name;
+    $venue_options[$row->venue_id] = $row->name;
   }
   return $venue_options;
 }
@@ -173,19 +177,19 @@ function eventbrite_venue_list() {
     foreach ($venues as $venue) {
       $address = $venue->address;
       if (!empty($venue->address2)) {
-      	$address .= ', '.$venue->address2;
+        $address .= ', '. $venue->address2;
       }
       if (!empty($venue->city)) {
-      	$address .= ', '.$venue->city;
+        $address .= ', '. $venue->city;
       }
       if (!empty($venue->region)) {
-      	$address .= ', '.$venue->region;
+        $address .= ', '. $venue->region;
       }
       if (!empty($venue->country)) {
-      	$address .= ', '.$venue->country;
+        $address .= ', '. $venue->country;
       }
       if (!empty($venue->postal_code)) {
-      	$address .= ', '.$venue->postal_code;
+        $address .= ', '. $venue->postal_code;
       }
       $rows[] = array(
 //        l($venue->name, '/admin/settings/eventbrite/view-venue/'. $venue->venue_id), 
@@ -217,11 +221,11 @@ function eventbrite_venue_save($venue) {
     $venue->venue_id
   );
   if ($row = db_fetch_object($result)) {
-  	// This venue is already in the DB, just update
+    // This venue is already in the DB, just update
     drupal_write_record('eventbrite_venue', $venue, array('venue_id'));
   }
   else {
-  	// This venue is not in the DB, must insert
+    // This venue is not in the DB, must insert
     drupal_write_record('eventbrite_venue', $venue);
   }
 }

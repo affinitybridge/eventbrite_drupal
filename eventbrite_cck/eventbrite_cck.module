@@ -90,7 +90,7 @@ function eventbrite_cck_theme() {
  */
 function eventbrite_cck_field_access($op, $field, $account, $node = NULL) {
   if ($field['type'] == 'eventbrite_cck') {
-	switch ($op) {
+    switch ($op) {
       case 'edit':
         return user_access('edit eventbrite events');
     }

@@ -1,12 +1,17 @@
 <?php
 // $Id$
 
+/**
+ * @file
+ * Defines page callbacks for Eventbrite Groups
+ */
+
 function eventbrite_og_venue_form($form_state, $venue_id = 0) {
 //  $payment_settings_form = eventbrite_ui_payment_settings_form();
 //  return system_settings_form($payment_settings_form);
 //drupal_set_message('yar'.$yar);
   og_set_group_context($group_node);
-	
+
 // TODO: payment settings form?  THis won't do!
 //  module_load_include('inc', 'eventbrite_ui', 'eventbrite_ui.forms');
   //  $form = eventbrite_ui_payment_settings_form();
@@ -34,7 +39,7 @@ function eventbrite_og_default_payment_settings($form_state, $group_node) {
   
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Update default settings'),
+    '#value' => 'Update default settings',
   );
 
   return $form;
@@ -43,19 +48,19 @@ function eventbrite_og_default_payment_settings($form_state, $group_node) {
 /*
  * Default Payment Settings Form Validate
  */
-function eventbrite_payment_default_settings_validate($form, &$form_state) {
+function eventbrite_og_default_payment_settings_validate($form, &$form_state) {
   $form_values = $form_state['values'];
 
   $form_errors = eventbrite_payment_settings_errors($form_values);
   foreach ($form_errors as $form_element => $error_msg) {
-  	form_set_error($form_element, $error_msg);
+    form_set_error($form_element, $error_msg);
   }
 }
 
 /*
  * Default Payment Settings Form Submit
  */
-function eventbrite_payment_default_settings_submit($form, &$form_state) {
+function eventbrite_og_default_payment_settings_submit($form, &$form_state) {
   drupal_set_message('Group specific payment settings can not be customized at this time', 'error');
   // TODO: Save form values to DB table
 }

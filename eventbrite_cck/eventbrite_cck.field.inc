@@ -325,10 +325,10 @@ function _eventbrite_cck_field_sanitize(&$node, $field, &$items, $teaser, $page)
  * Implementation of CCK's hook_field($op = 'presave').
  */
 function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) {
-	//  print_r($node);exit(5);
-	
+  //  print_r($node);exit(5);
+
   if (is_array($items) && !empty($items)) {
-  	// Loop through multiple form values
+    // Loop through multiple form values
     foreach ($items as $delta => $item) {
       // If the field is empty just skip, wasn't filled in, that is valid
       if (eventbrite_cck_content_is_empty($item, $field)) {
@@ -389,7 +389,7 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
 
       // Get fresh event data from the server, whether the event was loaded, updated, or created      
       if ($new_event = eventbrite_get('event_get', $new_event_id)) {
-      	// Update field values with values from the Eventbrite server
+        // Update field values with values from the Eventbrite server
         $items[$delta]['ebid'] = $new_event->id;
         $items[$delta]['title'] = $new_event->title;
         $items[$delta]['status'] = $new_event->status;
@@ -402,10 +402,10 @@ function _eventbrite_cck_field_presave(&$node, $field, &$items, $teaser, $page) 
         
         // Update the ticket settings
         // TODO: Allow for multiple ticket processing
-        _eventbrite_cck_field_presave_ticket($items[$delta]['tickets'][0], $new_event, $item[load_ebid]);
+        _eventbrite_cck_field_presave_ticket($items[$delta]['tickets'][0], $new_event, $item['load_ebid']);
 
         // Update the payment settings
-        _eventbrite_cck_field_presave_payment_settings($items[$delta]['payment'], $new_event, $item[load_ebid]);
+        _eventbrite_cck_field_presave_payment_settings($items[$delta]['payment'], $new_event, $item['load_ebid']);
       }
       else {
         // Could not load that new event from the Eventbrite server
@@ -469,7 +469,7 @@ function _eventbrite_cck_field_presave_ticket(&$ticket_item, $event, $load_ebid 
   else {
     // TODO: Tickets for loaded events need to be editable
     
-  	// This is load_ebid field within tickets is a temporary fix to mark tickets that we don't know about
+    // This is load_ebid field within tickets is a temporary fix to mark tickets that we don't know about
     // The tickets form does not get built so payment just goes into the DB with load_ebid
     if ($load_ebid) {
       $ticket_item = array(
@@ -507,12 +507,12 @@ function _eventbrite_cck_field_presave_payment_settings(&$payment_item, $event, 
         }
       }
       drupal_set_message('Could not update the payment settings on the Eventbrite server', 'error');
-    }          	
+    }
   }
   else {
     // TODO: Payment settings for loaded events need to be editable
     
-  	// This is load_ebid field within payment is a temporary fix to mark payment settings that we don't know
+    // This is load_ebid field within payment is a temporary fix to mark payment settings that we don't know
     // The payment settings form does not get built so payment just goes into the DB with load_ebid
     if ($load_ebid) {
       $payment_item = array(

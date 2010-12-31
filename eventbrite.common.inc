@@ -43,9 +43,9 @@ function _eventbrite_common_process_request($request) {
   // Invoke hook_eventbrite_request_alter for sub modules to make changes
   // Do not invoke for user_get calls, user_get should never be altered
   switch ($request->op) {
-  	case 'user_get':
-  	  break;
-  	default:
+    case 'user_get':
+      break;
+    default:
       module_invoke_all('eventbrite_request_alter', $request);
       break;
   }
@@ -86,7 +86,7 @@ function _eventbrite_common_process_request($request) {
   if ($result = drupal_http_request(EVENTBRITE_SERVER . $request->op .'?'. $request->query_string) ) {
     $result->module = $request->module;
     $result->user_key = $request->user_key;
-  	
+
     // Process the result if there was one, and return simplexml_load_string($result->data)
     if (_eventbrite_common_process_result($result)) {
       $result->source = 'server';
@@ -94,7 +94,7 @@ function _eventbrite_common_process_request($request) {
       // If this was a get operation then cache the results
       if ($request->op_type == 'get') {
         $result->updated = TRUE;
-      	if ($request->allowed_cache) {
+        if ($request->allowed_cache) {
           if (isset($cached_result)) {
             // There was already a cached result, so we'll need to update the cache
             if (strcmp($cached_result->result, $result->data)) {
@@ -109,7 +109,7 @@ function _eventbrite_common_process_request($request) {
             _eventbrite_common_cache_result($result->data, $request, 'update');
           }
           else {
-        	// There was no cached result, so we'll need to insert into the cache
+            // There was no cached result, so we'll need to insert into the cache
             _eventbrite_common_cache_result($result->data, $request, 'insert');
           }
         }

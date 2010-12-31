@@ -63,22 +63,22 @@ function _eventbrite_api_get_venues() {
  * This function fetches one user by user key
  */
 function _eventbrite_api_get_user($user_key = '', $key_type = '') {
-	// Build a new request object
+  // Build a new request object
   $request = _eventbrite_common_new_request('user_get', 'get');
 
   switch ($key_type) {
-  	case 'email':
-  	  $request->params['email'] = $user_key;
-  	  break;
-  	case 'user_id':
-  	  $request->params['user_id'] = $user_key;
-  	  break;
-  	case 'user_key':
-  	  $request->user_key = $user_key;
-  	  break;
+    case 'email':
+      $request->params['email'] = $user_key;
+      break;
+    case 'user_id':
+      $request->params['user_id'] = $user_key;
+      break;
+    case 'user_key':
+      $request->user_key = $user_key;
+      break;
   }
   if ($user_key) {
-  	$request->$key_type = $user_key;
+    $request->$key_type = $user_key;
   }
 
   if ($result = _eventbrite_common_process_request($request)) {
@@ -129,9 +129,9 @@ function _eventbrite_api_populate_user($user_data) {
   if ($subusers = (array)$user_data->subusers) {
     $eb_user->subusers = array();
     foreach ($subusers['subuser'] as $subuser) {
-  	  $eb_subuser = new stdClass();
-  	  $eb_subuser->user_id = (integer)$subuser->id;
-  	  $eb_subuser->email = (string)$subuser->email;
+      $eb_subuser = new stdClass();
+      $eb_subuser->user_id = (integer)$subuser->id;
+      $eb_subuser->email = (string)$subuser->email;
 
       $eb_user->subusers[] = $eb_subuser;
     }

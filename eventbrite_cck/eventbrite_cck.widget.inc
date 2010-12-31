@@ -33,7 +33,7 @@ function _eventbrite_cck_event_widget_process($element, $edit, &$form_state, $fo
   drupal_add_js(drupal_get_path('module', 'eventbrite_cck')  .'/eventbrite_cck.js', 'module');
 
   if (empty($ebid)) {
-  	// Show source widget if this event field is empty
+    // Show source widget if this event field is empty
     if ($field['allow_create_edit'] && $field['allow_load']) {
 
       // Field is new, please show creator widget
@@ -90,10 +90,10 @@ function _eventbrite_cck_event_widget_process($element, $edit, &$form_state, $fo
 
       }
       else {
-      	$element['load']['no_events'] = array(
-      	  '#type' => 'item',
-      	  '#value' => t('There are currently no events created in this account.'),
-      	);
+        $element['load']['no_events'] = array(
+          '#type' => 'item',
+          '#value' => t('There are currently no events created in this account.'),
+        );
       }
 
     }
@@ -347,19 +347,19 @@ function _eventbrite_cck_event_widget_process_tickets($element) {
 
   // TODO: This is a bandaid since we don't have a way yet to edit tickets for events loaded from the server
   if (isset($element_values['load_ebid'])) {
-  	$fieldset['load_ebid_msg'] = array(
-  	  '#type' => t('item'),
-  	  '#value' => t('This event has been loaded from the Eventbrite server.  Editing its tickets is not supported at this time'),
-  	);
-  	
-  	$fieldset['load_ebid'] = array(
-  	  '#type' => 'value',
-  	  '#value' => $element_values['ebid'],
-  	);
-  	
-  	// Do not build the rest of the editing form for Tickets  	
-  	// TODO: Perhaps it would be better to just return here (without $fieldset) while tickets are not editable
-  	return $fieldset;
+    $fieldset['load_ebid_msg'] = array(
+      '#type' => t('item'),
+      '#value' => t('This event has been loaded from the Eventbrite server.  Editing its tickets is not supported at this time'),
+    );
+
+    $fieldset['load_ebid'] = array(
+      '#type' => 'value',
+      '#value' => $element_values['ebid'],
+    );
+
+    // Do not build the rest of the editing form for Tickets  	
+    // TODO: Perhaps it would be better to just return here (without $fieldset) while tickets are not editable
+    return $fieldset;
   }
   
   
@@ -489,28 +489,28 @@ function _eventbrite_cck_event_widget_process_payment($element, $fieldset_class)
 
   // TODO: This is a bandaid since we don't have a way yet to edit payment settings for events loaded form the server
   if (isset($element_values['load_ebid'])) {
-  	$fieldset['load_ebid_msg'] = array(
-  	  '#type' => t('item'),
-  	  '#value' => t('This event has been loaded from the Eventbrite server.  Editing its payment settings is not supported at this time'),
-  	);
-  	
-  	$fieldset['load_ebid'] = array(
-  	  '#type' => 'value',
-  	  '#value' => $element_values['ebid'],
-  	);
-  	
-  	// Do not build the rest of the editing form for Payment Settings  	
-  	// TODO: Perhaps it would be better to just return here (without $fieldset) while pay ment settings are not editable
-  	return $fieldset;
+    $fieldset['load_ebid_msg'] = array(
+      '#type' => t('item'),
+      '#value' => t('This event has been loaded from the Eventbrite server.  Editing its payment settings is not supported at this time'),
+    );
+
+    $fieldset['load_ebid'] = array(
+      '#type' => 'value',
+      '#value' => $element_values['ebid'],
+    );
+
+    // Do not build the rest of the editing form for Payment Settings  	
+    // TODO: Perhaps it would be better to just return here (without $fieldset) while pay ment settings are not editable
+    return $fieldset;
   }
-  
+
   // This checkbox will toggle and allow us to know if ticket values need to be updated
   $fieldset['payment_toggle'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Update payment settings'),
+    '#title' => 'Update payment settings',
     '#default_value' => 0,
     '#weight' => -10,
-    '#description' => t('Update payment settings for this event'),
+    '#description' => 'Update payment settings for this event',
     '#attributes' => array('class' => 'eventbrite_cck-payment-toggle'),
   );
 
@@ -518,12 +518,12 @@ function _eventbrite_cck_event_widget_process_payment($element, $fieldset_class)
   module_load_include('inc', 'eventbrite', 'eventbrite.payment');
 
   if (empty($element_values)) {
-  	// Payment settings have not been defined for this event
-  	$fieldset['payment_toggle']['#title'] = t('Enter payment settings for this event.');
+    // Payment settings have not been defined for this event
+    $fieldset['payment_toggle']['#title'] = t('Enter payment settings for this event.');
     $fieldset['payment_toggle']['#description'] = t('You have not configured any payment settings for this event.');
     
-  	// Fill default settings into the form since no payment settings have been configured
-  	$default_values = variable_get('eventbrite_default_payment_settings', array());
+    // Fill default settings into the form since no payment settings have been configured
+    $default_values = variable_get('eventbrite_default_payment_settings', array());
     $payment_settings_form = eventbrite_payment_settings_form($default_values);
 
     // Add a flag so that the field knows that payment settings have not been defined
@@ -535,7 +535,7 @@ function _eventbrite_cck_event_widget_process_payment($element, $fieldset_class)
     );
   }
   else {
-  	// Payment Settings have already been created for this event
+    // Payment Settings have already been created for this event
     $payment_settings_form = eventbrite_payment_settings_form($element_values);
   }
   
@@ -565,7 +565,7 @@ function _eventbrite_cck_event_widget_validate(&$element, &$form_state) {
 
   // If this is a new event instance and the source widget has not even been selected
   if (!$ebid && !isset($form_values['eventbrite_new'])) {
-  	// There is no event here, the field is empty
+    // There is no event here, the field is empty
     if ($element['#required']) {
       // Throw an error if the field is required
       form_set_error($field_name, t('Event information is required for !field_label', array('!field_label' => $field['widget']['label'])));
@@ -646,7 +646,7 @@ function _eventbrite_cck_event_widget_validate_load_ebid($element, $form_values,
         )
       );
     }
-  }	
+  }
 }
 
 /**
@@ -658,7 +658,7 @@ function _eventbrite_cck_event_widget_validate_tickets($element, $form_values) {
   $field_name = $element['#field_name'];
 
   foreach ($form_values['tickets'] as $index => $ticket) {
-  	if ($ticket['ticket_toggle']) {
+    if ($ticket['ticket_toggle']) {
       // Ticket Name is required here
       if (empty($ticket['ticket_name'])) {
         form_set_error($field_name, t('The ticket name field is required for event submission in !field_label', array('!field_label' => $field['widget']['label'])));
@@ -680,16 +680,16 @@ function _eventbrite_cck_event_widget_validate_tickets($element, $form_values) {
           form_set_error($field_name, t('There must be a price entered for fixd price tickets in !field_label', array('!field_label' => $field['widget']['label'])));
         }
       }
-  	}
-  	else {
-  	  if (empty($ticket['ticket_id'])) {
-  	  	// Ticket id is not set, no ticket exists
-  	  	// Better make sure that this ticket status wasn't set to live
+    }
+    else {
+      if (empty($ticket['ticket_id'])) {
+        // Ticket id is not set, no ticket exists
+        // Better make sure that this ticket status wasn't set to live
         if ($form_values['status'] == 'live') {
           form_set_error($field_name, t('You must create a ticket for this event if you want it to be Live in !field_label', array('!field_label' => $field['widget']['label'])));
         }
-  	  }
-  	}
+      }
+    }
   }
 }
 
@@ -703,9 +703,9 @@ function _eventbrite_cck_event_widget_validate_payment($element, $form_values) {
   // Only validate if payment_toggle is set
   if ($form_values['payment']['payment_toggle']) {
     // Validation of payment form handled by Eventbrite base module
-  	$form_errors = eventbrite_payment_settings_errors($form_values['payment']);
+    $form_errors = eventbrite_payment_settings_errors($form_values['payment']);
     foreach ($form_errors as $form_element => $error_msg) {
-  	  form_set_error($element['#field_name'], $error_msg);
+      form_set_error($element['#field_name'], $error_msg);
     }
   }
 }
