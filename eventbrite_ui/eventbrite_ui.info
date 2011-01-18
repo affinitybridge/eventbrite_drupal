@@ -1,6 +1,0 @@
-name = Eventbrite UI
-description = Provides basic user interfaces to act on eventbrite objects.  Right now this is being used mostly to test the API module.
-version = "6.x-2.x-dev"
-core = 6.x
-package = Eventbrite
-dependencies[] = eventbrite
